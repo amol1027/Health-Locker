@@ -64,8 +64,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $hospital_name = $_POST['hospital_name'];
 
             try {
-                $stmt = $pdo->prepare("INSERT INTO medical_records (member_id, record_type, record_date, doctor_name, hospital_name, file_path) VALUES (?, ?, ?, ?, ?, ?)");
-                if ($stmt->execute([$member_id, $record_type, $record_date, $doctor_name, $hospital_name, $fileDestination])) {
+                $stmt = $pdo->prepare("INSERT INTO medical_records (member_id, record_type, record_date, doctor_name, hospital_name, file_path, fileExt) VALUES (?, ?, ?, ?, ?, ?, ?)");
+                if ($stmt->execute([$member_id, $record_type, $record_date, $doctor_name, $hospital_name, $fileDestination,$fileExt])) {
                     $message = 'Record uploaded successfully! Redirecting...';
                     header('Refresh: 2; URL=view_records.php?member_id=' . $member_id);
                 } else {

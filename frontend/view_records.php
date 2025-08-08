@@ -32,7 +32,8 @@ try {
     $member_name = $member['first_name'] . ' ' . $member['last_name'];
 
     // Then, fetch all medical records for this member, ordered chronologically
-    $stmt = $pdo->prepare("SELECT id, record_type, record_date, doctor_name, hospital_name FROM medical_records WHERE member_id = ? ORDER BY record_date DESC");
+ // In your original PHP code, modify the query to include file_type:
+    $stmt = $pdo->prepare("SELECT id, record_type, record_date, doctor_name, hospital_name, fileExt FROM medical_records WHERE member_id = ? ORDER BY record_date DESC");
     $stmt->execute([$member_id]);
     $records = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
@@ -48,57 +49,363 @@ try {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Medical Records - Health Locker</title>
-    <link href="https://cdn.jsdelivr/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 </head>
-<body class="bg-gray-100 font-sans">
-    <nav class="bg-white shadow-lg p-4 flex justify-between items-center">
-        <h1 class="text-xl font-bold text-gray-800">Health Locker</h1>
-        <div>
-            <a href="dashboard.php" class="text-blue-500 hover:text-blue-700 font-medium mr-4">Dashboard</a>
-            <a href="logout.php" class="text-red-500 hover:text-red-700 font-medium">Log Out</a>
-        </div>
-    </nav>
-    <div class="container mx-auto mt-8 p-4 max-w-4xl">
-        <?php if (isset($member_name)): ?>
-            <h2 class="text-3xl font-bold mb-6 text-gray-800">Medical Records for <?php echo htmlspecialchars($member_name); ?></h2>
-        <?php else: ?>
-            <h2 class="text-3xl font-bold mb-6 text-gray-800">Medical Records</h2>
-        <?php endif; ?>
-
-        <a href="upload_record.php?member_id=<?php echo htmlspecialchars($member_id); ?>" class="mb-6 inline-block bg-green-500 text-white font-bold py-2 px-4 rounded hover:bg-green-600">Upload New Record</a>
-
-        <div class="mt-6 space-y-4">
-            <?php
-                if (isset($records) && !empty($records)) {
-                    foreach ($records as $record) {
-                        echo '<div class="bg-white p-6 rounded-lg shadow-md flex items-start space-x-4">';
-                        echo '    <div class="flex-shrink-0">';
-                        echo '        <div class="h-10 w-10 flex items-center justify-center rounded-full bg-blue-100 text-blue-500">';
-                        echo '            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">';
-                        echo '                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m-5 4h4a2 2 0 002-2V6a2 2 0 00-2-2H9a2 2 0 00-2 2v12a2 2 0 002 2z" />';
-                        echo '            </svg>';
-                        echo '        </div>';
-                        echo '    </div>';
-                        echo '    <div class="flex-grow">';
-                        echo '        <div class="flex justify-between items-center">';
-                        echo '            <div>';
-                        echo '                <h4 class="text-lg font-semibold text-gray-900">' . htmlspecialchars($record['record_type']) . '</h4>';
-                        echo '                <p class="text-sm text-gray-500">Date: ' . htmlspecialchars($record['record_date']) . '</p>';
-                        echo '            </div>';
-                        echo '            <a href="view_file.php?record_id=' . $record['id'] . '" target="_blank" class="text-sm font-medium text-blue-600 hover:text-blue-800">View File</a>';
-                        echo '        </div>';
-                        if (!empty($record['doctor_name'])) {
-                            echo '<p class="text-sm text-gray-700 mt-1">Doctor: ' . htmlspecialchars($record['doctor_name']) . '</p>';
-                        }
-                        if (!empty($record['hospital_name'])) {
-                            echo '<p class="text-sm text-gray-700">Hospital: ' . htmlspecialchars($record['hospital_name']) . '</p>';
-                        }
-                    }
-                } else {
-                    echo '<p class="text-gray-500">No medical records found for this family member. <a href="upload_record.php?member_id=' . htmlspecialchars($member_id) . '" class="text-blue-500 hover:text-blue-700">Upload one now</a>.</p>';
-                }
-            ?>
+<body class="bg-gray-50 font-sans">
+    <!-- Filter Modal -->
+    <div id="filterModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full hidden z-50 flex items-center justify-center p-4">
+        <div class="relative bg-white rounded-lg shadow-xl w-full max-w-md">
+            <div class="flex justify-between items-center p-5 border-b">
+                <h3 class="text-xl font-semibold text-gray-800">Search & Filter Records</h3>
+                <button id="closeModalBtn" class="text-gray-500 hover:text-gray-700">
+                    <i class="fas fa-times text-xl"></i>
+                </button>
+            </div>
+            <form action="view_records.php" method="GET" class="p-5">
+                <input type="hidden" name="member_id" value="<?php echo htmlspecialchars($member_id); ?>">
+                <div class="mb-4">
+                    <label for="search_query" class="block text-gray-700 text-sm font-medium mb-2">Search</label>
+                    <div class="relative">
+                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                            <i class="fas fa-search text-gray-400"></i>
+                        </div>
+                        <input type="text" id="search_query" name="search_query" placeholder="Doctor, hospital, or keywords..." 
+                               class="pl-10 w-full py-2 px-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                    </div>
+                </div>
+                <div class="mb-4">
+                    <label for="record_type_filter" class="block text-gray-700 text-sm font-medium mb-2">Record Type</label>
+                    <select id="record_type_filter" name="record_type_filter" 
+                            class="w-full py-2 px-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                        <option value="">All Record Types</option>
+                        <option value="Prescription">Prescription</option>
+                        <option value="Lab Report">Lab Report</option>
+                        <option value="Scan">Scan</option>
+                        <option value="Discharge Summary">Discharge Summary</option>
+                        <option value="Vaccination">Vaccination</option>
+                        <option value="Other">Other</option>
+                    </select>
+                </div>
+                <div class="mb-4">
+                    <label class="block text-gray-700 text-sm font-medium mb-2">Date Range</label>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label for="start_date" class="block text-xs text-gray-500 mb-1">From</label>
+                            <input type="date" id="start_date" name="start_date" 
+                                   class="w-full py-2 px-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                        </div>
+                        <div>
+                            <label for="end_date" class="block text-xs text-gray-500 mb-1">To</label>
+                            <input type="date" id="end_date" name="end_date" 
+                                   class="w-full py-2 px-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                        </div>
+                    </div>
+                </div>
+                <div class="flex justify-end space-x-3 pt-4 border-t">
+                    <button type="button" id="resetFiltersBtn" class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        Reset
+                    </button>
+                    <button type="submit" class="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        Apply Filters
+                    </button>
+                </div>
+            </form>
         </div>
     </div>
+
+    <!-- Navigation Bar -->
+    <nav class="bg-white shadow-sm">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16">
+                <div class="flex items-center">
+                    <span class="text-xl font-bold text-blue-600">HealthLocker</span>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <a href="dashboard.php" class="text-gray-600 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium flex items-center">
+                        <i class="fas fa-home mr-2"></i> Dashboard
+                    </a>
+                    <a href="logout.php" class="text-gray-600 hover:text-red-600 px-3 py-2 rounded-md text-sm font-medium flex items-center">
+                        <i class="fas fa-sign-out-alt mr-2"></i> Log Out
+                    </a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div class="flex flex-col md:flex-row md:justify-between md:items-center mb-8">
+            <div class="mb-4 md:mb-0">
+                <h1 class="text-2xl font-bold text-gray-900">Medical Records</h1>
+                <p class="text-gray-600">For <?php echo htmlspecialchars($member_name); ?></p>
+            </div>
+            <div class="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2">
+                <button id="openModalBtn" class="bg-white border border-gray-300 text-gray-700 px-4 py-2 rounded-md shadow-sm text-sm font-medium hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 flex items-center justify-center">
+                    <i class="fas fa-filter mr-2"></i> Filter Records
+                </button>
+                <a href="upload_record.php?member_id=<?php echo htmlspecialchars($member_id); ?>" class="bg-blue-600 text-white px-4 py-2 rounded-md shadow-sm text-sm font-medium hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 flex items-center justify-center">
+                    <i class="fas fa-plus mr-2"></i> Upload Record
+                </a>
+            </div>
+        </div>
+
+        <!-- Records List -->
+        <div class="bg-white shadow overflow-hidden sm:rounded-lg">
+            <?php if (isset($records) && !empty($records)): ?>
+                <ul class="divide-y divide-gray-200">
+                    <?php foreach ($records as $record): ?>
+                        <li class="hover:bg-gray-50 transition duration-150 ease-in-out">
+                            <div class="px-4 py-4 sm:px-6">
+                                <div class="flex items-center justify-between">
+                                    <div class="flex items-center">
+                                        <?php 
+                                            $iconClass = 'text-blue-500';
+                                            $icon = 'fa-file-medical'; // Default icon
+                                            
+                                            switch($record['record_type']) {
+                                                case 'Prescription':
+                                                    $icon = 'fa-prescription-bottle-alt';
+                                                    $iconClass = 'text-green-500';
+                                                    break;
+                                                case 'Lab Report':
+                                                    $icon = 'fa-flask';
+                                                    $iconClass = 'text-purple-500';
+                                                    break;
+                                                case 'Scan':
+                                                    $icon = 'fa-x-ray';
+                                                    $iconClass = 'text-yellow-500';
+                                                    break;
+                                                case 'Discharge Summary':
+                                                    $icon = 'fa-file-signature';
+                                                    $iconClass = 'text-red-500';
+                                                    break;
+                                                case 'Vaccination':
+                                                    $icon = 'fa-syringe';
+                                                    $iconClass = 'text-indigo-500';
+                                                    break;
+                                            }
+                                        ?>
+                                        <div class="flex-shrink-0 mr-4">
+                                            <i class="fas <?php echo $icon; ?> text-2xl <?php echo $iconClass; ?>"></i>
+                                        </div>
+                                        <div>
+                                            <div class="text-sm font-medium text-blue-600"><?php echo htmlspecialchars($record['record_type']); ?></div>
+                                            <div class="text-sm text-gray-500 mt-1">
+                                                <span class="inline-flex items-center mr-3">
+                                                    <i class="far fa-calendar-alt mr-1"></i> <?php echo date("M d, Y", strtotime($record['record_date'])); ?>
+                                                </span>
+                                                <?php if (!empty($record['doctor_name'])): ?>
+                                                    <span class="inline-flex items-center mr-3">
+                                                        <i class="fas fa-user-md mr-1"></i> <?php echo htmlspecialchars($record['doctor_name']); ?>
+                                                    </span>
+                                                <?php endif; ?>
+                                                <?php if (!empty($record['hospital_name'])): ?>
+                                                    <span class="inline-flex items-center">
+                                                        <i class="fas fa-hospital mr-1"></i> <?php echo htmlspecialchars($record['hospital_name']); ?>
+                                                    </span>
+                                                <?php endif; ?>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="ml-4 flex-shrink-0">
+                                        <a href="#" onclick="openViewRecordModal(<?php echo $record['id']; ?>)" class="inline-flex items-center px-3 py-1 border border-transparent text-sm leading-5 font-medium rounded-md text-blue-700 bg-blue-100 hover:bg-blue-200 focus:outline-none focus:ring-2 focus:ring-blue-500">
+    <i class="fas fa-eye mr-1"></i> View
+</a>
+                                    </div>
+                                </div>
+                            </div>
+                        </li>
+                    <?php endforeach; ?>
+                </ul>
+            <?php else: ?>
+                <div class="text-center py-12">
+                    <i class="fas fa-file-medical text-4xl text-gray-400 mb-4"></i>
+                    <h3 class="text-lg font-medium text-gray-900">No medical records found</h3>
+                    <p class="mt-1 text-sm text-gray-500">Get started by uploading a new medical record.</p>
+                    <div class="mt-6">
+                        <a href="upload_record.php?member_id=<?php echo htmlspecialchars($member_id); ?>" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                            <i class="fas fa-plus mr-2"></i> Upload Record
+                        </a>
+                    </div>
+                </div>
+            <?php endif; ?>
+        </div>
+    </div>
+
+    <!-- View Record Modal -->
+<div id="viewRecordModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-lg shadow-xl w-full max-w-2xl">
+        <div class="flex justify-between items-center p-4 border-b">
+            <h3 class="text-xl font-semibold" id="modalRecordTitle">Record Details</h3>
+            <button id="closeViewModalBtn" class="text-gray-500 hover:text-gray-700">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div class="p-6">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                    <h4 class="font-medium text-gray-900">Record Information</h4>
+                    <div class="mt-4 space-y-3">
+                        <p><span class="text-gray-600">Type:</span> <span id="modalRecordType"></span></p>
+                        <p><span class="text-gray-600">Date:</span> <span id="modalRecordDate"></span></p>
+                        <p><span class="text-gray-600">Doctor:</span> <span id="modalRecordDoctor"></span></p>
+                        <p><span class="text-gray-600">Hospital:</span> <span id="modalRecordHospital"></span></p>
+                    </div>
+                </div>
+                <div>
+                    <h4 class="font-medium text-gray-900">Document Preview</h4>
+                    <div class="mt-4 border-2 border-dashed border-gray-300 rounded-lg p-4 flex items-center justify-center min-h-40">
+                        <iframe id="recordPreview" class="w-full h-64 hidden"></iframe>
+                        <div id="noPreview" class="text-center text-gray-500">
+                            <i class="fas fa-file-alt text-4xl mb-2"></i>
+                            <p>Preview not available</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="flex justify-end p-4 border-t space-x-3">
+            <button id="downloadRecordBtn" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
+                <i class="fas fa-download mr-2"></i> Download
+            </button>
+            <button id="closeModalFooterBtn" class="px-4 py-2 bg-gray-200 text-gray-800 rounded hover:bg-gray-300">
+    Close
+</button>
+        </div>
+    </div>
+</div>
+<script>
+// View Record Modal Functionality
+document.addEventListener('DOMContentLoaded', function() {
+    // Modal elements
+    const viewModal = document.getElementById('viewRecordModal');
+    const closeViewModalBtn = document.getElementById('closeViewModalBtn');
+    const downloadRecordBtn = document.getElementById('downloadRecordBtn');
+    const filterModal = document.getElementById('filterModal');
+    
+    // Function to open view modal with record data
+    window.openViewRecordModal = function(recordId) {
+        console.log('Attempting to open record:', recordId);
+        
+        // Show loading state
+        document.getElementById('modalRecordTitle').textContent = 'Loading...';
+        document.getElementById('modalRecordType').textContent = '';
+        document.getElementById('modalRecordDate').textContent = '';
+        document.getElementById('modalRecordDoctor').textContent = '';
+        document.getElementById('modalRecordHospital').textContent = '';
+        document.getElementById('recordPreview').classList.add('hidden');
+        document.getElementById('noPreview').classList.remove('hidden');
+        
+        // Show modal immediately while loading data
+        viewModal.classList.remove('hidden');
+        
+        // Fetch record details via AJAX
+        fetch(`get_record_details.php?record_id=${recordId}`)
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                return response.json();
+            })
+            .then(data => {
+                console.log('Record data received:', data);
+                
+                if (!data || data.error) {
+                    throw new Error(data?.error || 'Invalid data received');
+                }
+                
+                // Populate modal with data
+                document.getElementById('modalRecordTitle').textContent = data.record_type || 'Record Details';
+                document.getElementById('modalRecordType').textContent = data.record_type || 'Not specified';
+                document.getElementById('modalRecordDate').textContent = data.record_date ? 
+                    new Date(data.record_date).toLocaleDateString() : 'Unknown date';
+                document.getElementById('modalRecordDoctor').textContent = data.doctor_name || 'N/A';
+                document.getElementById('modalRecordHospital').textContent = data.hospital_name || 'N/A';
+                
+                // Set download link
+                if (downloadRecordBtn) {
+                    downloadRecordBtn.onclick = () => {
+                        window.location.href = `download_record.php?record_id=${recordId}`;
+                    };
+                }
+                
+                // Show preview if available
+                const preview = document.getElementById('recordPreview');
+                const noPreview = document.getElementById('noPreview');
+                
+                if (data.file_type === 'pdf') {
+                    preview.src = `view_file.php?record_id=${recordId}`;
+                    preview.classList.remove('hidden');
+                    noPreview.classList.add('hidden');
+                } else {
+                    preview.classList.add('hidden');
+                    noPreview.classList.remove('hidden');
+                }
+            })
+            .catch(error => {
+                console.error('Error loading record:', error);
+                document.getElementById('modalRecordTitle').textContent = 'Error Loading Record';
+                alert('Failed to load record details. Please try again.');
+            });
+    };
+
+    // Close view modal
+    if (closeViewModalBtn) {
+        closeViewModalBtn.addEventListener('click', () => {
+            viewModal.classList.add('hidden');
+        });
+    }
+const closeModalFooterBtn = document.getElementById('closeModalFooterBtn');
+if (closeModalFooterBtn) {
+    closeModalFooterBtn.addEventListener('click', () => {
+        viewModal.classList.add('hidden');
+    });
+}
+    // Close modal when clicking outside
+    window.addEventListener('click', (event) => {
+        if (event.target === viewModal) {
+            viewModal.classList.add('hidden');
+        }
+        if (event.target === filterModal) {
+            filterModal.classList.add('hidden');
+        }
+    });
+
+    // Filter Modal Functionality
+    const openFilterBtn = document.getElementById('openModalBtn');
+    const closeFilterBtn = document.getElementById('closeModalBtn');
+    const resetFilterBtn = document.getElementById('resetFiltersBtn');
+
+    if (openFilterBtn) {
+        openFilterBtn.addEventListener('click', () => {
+            filterModal.classList.remove('hidden');
+        });
+    }
+
+    if (closeFilterBtn) {
+        closeFilterBtn.addEventListener('click', () => {
+            filterModal.classList.add('hidden');
+        });
+    }
+
+    if (resetFilterBtn) {
+        resetFilterBtn.addEventListener('click', () => {
+            document.getElementById('search_query').value = '';
+            document.getElementById('record_type_filter').value = '';
+            document.getElementById('start_date').value = '';
+            document.getElementById('end_date').value = '';
+        });
+    }
+
+    // Escape key to close modals
+    document.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape') {
+            viewModal.classList.add('hidden');
+            filterModal.classList.add('hidden');
+        }
+    });
+});
+</script>
 </body>
 </html>
