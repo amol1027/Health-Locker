@@ -36,7 +36,7 @@ try {
 <body class="bg-gray-100 font-sans">
     <nav class="bg-white shadow-lg p-4 flex justify-between items-center">
         <h1 class="text-xl font-bold text-gray-800">Health Locker</h1>
-        <a href="logout.php" class="text-red-500 hover:text-red-700 font-medium">Log Out</a>
+        <a href="../user/logout.php" class="text-red-500 hover:text-red-700 font-medium">Log Out</a>
     </nav>
     <div class="container mx-auto mt-8 p-4">
         <h2 class="text-3xl font-bold mb-6 text-gray-800">Welcome to your Personal Health Locker</h2>

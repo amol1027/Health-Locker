@@ -40,7 +40,51 @@ try {
 } catch (PDOException $e) {
     echo "Error: " . $e->getMessage();
 }
+// After the existing code that verifies the member belongs to the user
+$search_query = isset($_GET['search_query']) ? trim($_GET['search_query']) : '';
+$record_type_filter = isset($_GET['record_type_filter']) ? $_GET['record_type_filter'] : '';
+$start_date = isset($_GET['start_date']) ? $_GET['start_date'] : '';
+$end_date = isset($_GET['end_date']) ? $_GET['end_date'] : '';
 
+// Build the query with filters
+$sql = "SELECT id, record_type, record_date, doctor_name, hospital_name, fileExt 
+        FROM medical_records 
+        WHERE member_id = ?";
+$params = [$member_id];
+
+// Add search query filter
+if (!empty($search_query)) {
+    $sql .= " AND (doctor_name LIKE ? OR hospital_name LIKE ? OR record_type LIKE ?)";
+    $search_term = "%$search_query%";
+    array_push($params, $search_term, $search_term, $search_term);
+}
+
+// Add record type filter
+if (!empty($record_type_filter)) {
+    $sql .= " AND record_type = ?";
+    array_push($params, $record_type_filter);
+}
+
+// Add date range filter
+if (!empty($start_date)) {
+    $sql .= " AND record_date >= ?";
+    array_push($params, $start_date);
+}
+if (!empty($end_date)) {
+    $sql .= " AND record_date <= ?";
+    array_push($params, $end_date);
+}
+
+// Add sorting
+$sql .= " ORDER BY record_date DESC";
+
+try {
+    $stmt = $pdo->prepare($sql);
+    $stmt->execute($params);
+    $records = $stmt->fetchAll(PDO::FETCH_ASSOC);
+} catch (PDOException $e) {
+    // Handle error
+}
 ?>
 
 <!DOCTYPE html>
@@ -53,6 +97,7 @@ try {
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 </head>
 <body class="bg-gray-50 font-sans">
+    
     <!-- Filter Modal -->
     <div id="filterModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full hidden z-50 flex items-center justify-center p-4">
         <div class="relative bg-white rounded-lg shadow-xl w-full max-w-md">
@@ -62,46 +107,50 @@ try {
                     <i class="fas fa-times text-xl"></i>
                 </button>
             </div>
-            <form action="view_records.php" method="GET" class="p-5">
-                <input type="hidden" name="member_id" value="<?php echo htmlspecialchars($member_id); ?>">
-                <div class="mb-4">
-                    <label for="search_query" class="block text-gray-700 text-sm font-medium mb-2">Search</label>
-                    <div class="relative">
-                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                            <i class="fas fa-search text-gray-400"></i>
-                        </div>
-                        <input type="text" id="search_query" name="search_query" placeholder="Doctor, hospital, or keywords..." 
-                               class="pl-10 w-full py-2 px-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
-                    </div>
-                </div>
-                <div class="mb-4">
-                    <label for="record_type_filter" class="block text-gray-700 text-sm font-medium mb-2">Record Type</label>
-                    <select id="record_type_filter" name="record_type_filter" 
-                            class="w-full py-2 px-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
-                        <option value="">All Record Types</option>
-                        <option value="Prescription">Prescription</option>
-                        <option value="Lab Report">Lab Report</option>
-                        <option value="Scan">Scan</option>
-                        <option value="Discharge Summary">Discharge Summary</option>
-                        <option value="Vaccination">Vaccination</option>
-                        <option value="Other">Other</option>
-                    </select>
-                </div>
-                <div class="mb-4">
-                    <label class="block text-gray-700 text-sm font-medium mb-2">Date Range</label>
-                    <div class="grid grid-cols-2 gap-4">
-                        <div>
-                            <label for="start_date" class="block text-xs text-gray-500 mb-1">From</label>
-                            <input type="date" id="start_date" name="start_date" 
-                                   class="w-full py-2 px-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
-                        </div>
-                        <div>
-                            <label for="end_date" class="block text-xs text-gray-500 mb-1">To</label>
-                            <input type="date" id="end_date" name="end_date" 
-                                   class="w-full py-2 px-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
-                        </div>
-                    </div>
-                </div>
+           <form action="view_records.php" method="GET" class="p-5">
+    <input type="hidden" name="member_id" value="<?php echo htmlspecialchars($member_id); ?>">
+    <div class="mb-4">
+        <label for="search_query" class="block text-gray-700 text-sm font-medium mb-2">Search</label>
+        <div class="relative">
+            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <i class="fas fa-search text-gray-400"></i>
+            </div>
+            <input type="text" id="search_query" name="search_query" 
+                   value="<?php echo isset($_GET['search_query']) ? htmlspecialchars($_GET['search_query']) : ''; ?>" 
+                   placeholder="Doctor, hospital, or keywords..." 
+                   class="pl-10 w-full py-2 px-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+        </div>
+    </div>
+    <div class="mb-4">
+        <label for="record_type_filter" class="block text-gray-700 text-sm font-medium mb-2">Record Type</label>
+        <select id="record_type_filter" name="record_type_filter" 
+                class="w-full py-2 px-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+            <option value="">All Record Types</option>
+            <option value="Prescription" <?php echo (isset($_GET['record_type_filter']) && $_GET['record_type_filter'] === 'Prescription' ? 'selected' : ''); ?>>Prescription</option>
+            <option value="Lab Report" <?php echo (isset($_GET['record_type_filter']) && $_GET['record_type_filter'] === 'Lab Report' ? 'selected' : ''); ?>>Lab Report</option>
+            <option value="Scan" <?php echo (isset($_GET['record_type_filter']) && $_GET['record_type_filter'] === 'Scan' ? 'selected' : ''); ?>>Scan</option>
+            <option value="Discharge Summary" <?php echo (isset($_GET['record_type_filter']) && $_GET['record_type_filter'] === 'Discharge Summary' ? 'selected' : ''); ?>>Discharge Summary</option>
+            <option value="Vaccination" <?php echo (isset($_GET['record_type_filter']) && $_GET['record_type_filter'] === 'Vaccination' ? 'selected' : ''); ?>>Vaccination</option>
+            <option value="Other" <?php echo (isset($_GET['record_type_filter']) && $_GET['record_type_filter'] === 'Other' ? 'selected' : ''); ?>>Other</option>
+        </select>
+    </div>
+    <div class="mb-4">
+        <label class="block text-gray-700 text-sm font-medium mb-2">Date Range</label>
+        <div class="grid grid-cols-2 gap-4">
+            <div>
+                <label for="start_date" class="block text-xs text-gray-500 mb-1">From</label>
+                <input type="date" id="start_date" name="start_date" 
+                       value="<?php echo isset($_GET['start_date']) ? htmlspecialchars($_GET['start_date']) : ''; ?>" 
+                       class="w-full py-2 px-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+            </div>
+            <div>
+                <label for="end_date" class="block text-xs text-gray-500 mb-1">To</label>
+                <input type="date" id="end_date" name="end_date" 
+                       value="<?php echo isset($_GET['end_date']) ? htmlspecialchars($_GET['end_date']) : ''; ?>" 
+                       class="w-full py-2 px-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+            </div>
+        </div>
+    </div>
                 <div class="flex justify-end space-x-3 pt-4 border-t">
                     <button type="button" id="resetFiltersBtn" class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500">
                         Reset
@@ -125,7 +174,7 @@ try {
                     <a href="dashboard.php" class="text-gray-600 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium flex items-center">
                         <i class="fas fa-home mr-2"></i> Dashboard
                     </a>
-                    <a href="logout.php" class="text-gray-600 hover:text-red-600 px-3 py-2 rounded-md text-sm font-medium flex items-center">
+                    <a href="../user/logout.php" class="text-gray-600 hover:text-red-600 px-3 py-2 rounded-md text-sm font-medium flex items-center">
                         <i class="fas fa-sign-out-alt mr-2"></i> Log Out
                     </a>
                 </div>
@@ -136,20 +185,48 @@ try {
     <!-- Main Content -->
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div class="flex flex-col md:flex-row md:justify-between md:items-center mb-8">
+            
             <div class="mb-4 md:mb-0">
                 <h1 class="text-2xl font-bold text-gray-900">Medical Records</h1>
                 <p class="text-gray-600">For <?php echo htmlspecialchars($member_name); ?></p>
             </div>
-            <div class="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2">
-                <button id="openModalBtn" class="bg-white border border-gray-300 text-gray-700 px-4 py-2 rounded-md shadow-sm text-sm font-medium hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 flex items-center justify-center">
-                    <i class="fas fa-filter mr-2"></i> Filter Records
-                </button>
-                <a href="upload_record.php?member_id=<?php echo htmlspecialchars($member_id); ?>" class="bg-blue-600 text-white px-4 py-2 rounded-md shadow-sm text-sm font-medium hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 flex items-center justify-center">
-                    <i class="fas fa-plus mr-2"></i> Upload Record
-                </a>
-            </div>
+            
+           <div class="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2">
+            
+    <?php if (isset($_GET['search_query']) || isset($_GET['record_type_filter']) || isset($_GET['start_date']) || isset($_GET['end_date'])): ?>
+        <a href="view_records.php?member_id=<?php echo htmlspecialchars($member_id); ?>" 
+           class="bg-gray-200 text-gray-700 px-4 py-2 rounded-md shadow-sm text-sm font-medium hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 flex items-center justify-center">
+            <i class="fas fa-times mr-2"></i> Clear Filters
+        </a>
+    <?php endif; ?>
+    <button id="openModalBtn" class="bg-white border border-gray-300 text-gray-700 px-4 py-2 rounded-md shadow-sm text-sm font-medium hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 flex items-center justify-center">
+        <i class="fas fa-filter mr-2"></i> Filter Records
+    </button>
+    <a href="upload_record.php?member_id=<?php echo htmlspecialchars($member_id); ?>" class="bg-blue-600 text-white px-4 py-2 rounded-md shadow-sm text-sm font-medium hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 flex items-center justify-center">
+        <i class="fas fa-plus mr-2"></i> Upload Record
+    </a>
+</div>
         </div>
-
+<!-- After the heading section -->
+<?php if (isset($_GET['search_query']) || isset($_GET['record_type_filter']) || isset($_GET['start_date']) || isset($_GET['end_date'])): ?>
+    <div class="mb-4 p-3 bg-blue-50 text-blue-800 rounded-md">
+        <p class="font-medium">Active Filters:</p>
+        <ul class="list-disc list-inside">
+            <?php if (isset($_GET['search_query']) && !empty($_GET['search_query'])): ?>
+                <li>Search: "<?php echo htmlspecialchars($_GET['search_query']); ?>"</li>
+            <?php endif; ?>
+            <?php if (isset($_GET['record_type_filter']) && !empty($_GET['record_type_filter'])): ?>
+                <li>Record Type: <?php echo htmlspecialchars($_GET['record_type_filter']); ?></li>
+            <?php endif; ?>
+            <?php if (isset($_GET['start_date']) && !empty($_GET['start_date'])): ?>
+                <li>From: <?php echo htmlspecialchars(date('M d, Y', strtotime($_GET['start_date']))); ?></li>
+            <?php endif; ?>
+            <?php if (isset($_GET['end_date']) && !empty($_GET['end_date'])): ?>
+                <li>To: <?php echo htmlspecialchars(date('M d, Y', strtotime($_GET['end_date']))); ?></li>
+            <?php endif; ?>
+        </ul>
+    </div>
+<?php endif; ?>
         <!-- Records List -->
         <div class="bg-white shadow overflow-hidden sm:rounded-lg">
             <?php if (isset($records) && !empty($records)): ?>

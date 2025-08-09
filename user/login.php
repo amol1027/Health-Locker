@@ -24,7 +24,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 
                 $message = 'Login successful! Redirecting to your dashboard...';
                 // Redirect to dashboard
-                header('Refresh: 2; URL=dashboard.php');
+                header('Refresh: 2; URL=../frontend/dashboard.php');
             } else {
                 $message = 'Invalid email or password.';
             }
