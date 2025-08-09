@@ -51,7 +51,10 @@ try {
                             echo '<h4 class="text-lg font-bold text-blue-800">' . htmlspecialchars($member['first_name'] . ' ' . $member['last_name']) . '</h4>';
                             echo '<p class="text-sm text-gray-600">Relation: ' . htmlspecialchars($member['relation']) . '</p>';
                             echo '<p class="text-sm text-gray-600">D.O.B: ' . htmlspecialchars($member['date_of_birth']) . '</p>';
-                            echo '<a href="view_records.php?member_id=' . $member['id'] . '" class="mt-2 inline-block bg-blue-500 text-white text-sm px-4 py-2 rounded hover:bg-blue-600">View Records</a>';
+                            echo '<div class="mt-4">';
+                            echo '<a href="view_records.php?member_id=' . $member['id'] . '" class="mr-2 inline-block bg-blue-500 text-white text-sm px-4 py-2 rounded hover:bg-blue-600">View Records</a>';
+                            echo '<a href="../remainders/add_reminder.php?member_id=' . $member['id'] . '" class="inline-block bg-green-500 text-white text-sm px-4 py-2 rounded hover:bg-green-600">Set Reminder</a>';
+                            echo '</div>';
                             echo '</div>';
                         }
                     } else {

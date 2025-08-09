@@ -7,6 +7,7 @@ Health Locker is a web-based application that allows users to securely store and
 *   User registration and login
 *   Add and manage family members
 *   Upload and view health records for each family member
+*   Set reminders for family members for appointments or medication.
 *   Securely stores health records
 *   Dashboard to view all family members
 
