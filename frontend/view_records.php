@@ -334,14 +334,48 @@ document.addEventListener('DOMContentLoaded', function() {
                 const preview = document.getElementById('recordPreview');
                 const noPreview = document.getElementById('noPreview');
                 
-                if (data.file_type === 'pdf') {
-                    preview.src = `view_file.php?record_id=${recordId}`;
-                    preview.classList.remove('hidden');
-                    noPreview.classList.add('hidden');
-                } else {
-                    preview.classList.add('hidden');
-                    noPreview.classList.remove('hidden');
-                }
+// Replace the preview handling code with this:
+if (data.file_type && data.file_type.toLowerCase() === 'pdf') {
+    // For PDFs, use an iframe with proper URL parameters
+    preview.src = `view_file.php?record_id=${recordId}&preview=1#toolbar=0&navpanes=0&scrollbar=0`;
+    preview.classList.remove('hidden');
+    noPreview.classList.add('hidden');
+
+} else if (data.file_type && ['jpg', 'jpeg', 'png'].includes(data.file_type.toLowerCase())) {
+    // For images, create an img element dynamically
+    const img = document.createElement('img');
+    img.src = `view_file.php?record_id=${recordId}&preview=1`;
+    img.className = 'max-h-64 max-w-full object-contain';
+    
+    // Handle image load errors
+    img.onerror = function () {
+        this.parentElement.innerHTML = `
+            <i class="fas fa-file-alt text-4xl mb-2"></i>
+            <p>Could not load image preview</p>
+        `;
+    };
+
+    noPreview.innerHTML = `
+        <div class="flex flex-col items-center"></div>
+        <p class="mt-2 text-sm">Image Preview</p>
+    `;
+
+    // Insert image into the first div
+    noPreview.querySelector('div').appendChild(img);
+
+    noPreview.classList.remove('hidden');
+    preview.classList.add('hidden');
+
+} else {
+    // For unsupported types
+    preview.classList.add('hidden');
+    noPreview.classList.remove('hidden');
+    noPreview.innerHTML = `
+        <i class="fas fa-file-alt text-4xl mb-2"></i>
+        <p>Preview not available for ${data.file_type || 'this file type'}</p>
+    `;
+}
+
             })
             .catch(error => {
                 console.error('Error loading record:', error);

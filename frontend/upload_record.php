@@ -53,7 +53,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $message = 'Your file is too large (max 5MB).';
     } else {
         // Secure file upload
-        $fileNameNew = uniqid('', true) . "." . $fileExt;
+        $fileNameNew = uniqid('', true) . $fileExt;
         $fileDestination = '../uploads/health_records/' . $fileNameNew; // This directory MUST be outside the web root
         
         if (move_uploaded_file($fileTmpName, $fileDestination)) {
