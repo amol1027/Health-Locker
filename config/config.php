@@ -14,8 +14,15 @@ try {
     // You can add a success message for testing purposes, but remove it in production
     //echo "Connected successfully";
 } catch(PDOException $e) {
-    // If the connection fails, terminate the script and display the error
+// If the connection fails, terminate the script and display the error
     die("ERROR: Could not connect. " . $e->getMessage());
 }
+
+// SMTP configuration
+define('SMTP_HOST', 'smtp.gmail.com');
+define('SMTP_USERNAME', 'notehub11@gmail.com');
+define('SMTP_PASSWORD', 'eere knum lpxq wzli');
+define('SMTP_PORT', 587);
+define('SMTP_SECURE', 'tls');
 
 ?>

@@ -1,6 +1,6 @@
 <?php
 // This script should be executed via a cron job, not a web request
-require_once '../config/config.php';
+require_once __DIR__ . '/../config/config.php';
 
 use PHPMailer\PHPMailer\PHPMailer;
 use PHPMailer\PHPMailer\Exception;
@@ -11,7 +11,7 @@ require_once __DIR__ . '/../vendor/autoload.php';
 try {
     // Select reminders that are due within the next 5 minutes and haven't been sent
     $stmt = $pdo->prepare("
-        SELECT r.id, r.reminder_text, u.email
+        SELECT r.id, r.reminder_text, u.email, u.name
         FROM reminders r
         JOIN users u ON r.user_id = u.id
         WHERE r.reminder_datetime <= NOW() AND r.is_sent = FALSE
@@ -22,17 +22,20 @@ try {
     if (count($due_reminders) > 0) {
         $mail = new PHPMailer(true);
 
-        // Server settings - REPLACE WITH YOUR ACTUAL SMTP CREDENTIALS
+        // Server settings
         $mail->isSMTP();
-        $mail->Host = 'smtp.example.com';  // Your SMTP server
+        $mail->Host = SMTP_HOST;
         $mail->SMTPAuth = true;
-        $mail->Username = 'user@example.com'; // Your SMTP username
-        $mail->Password = 'secret'; // Your SMTP password
-        $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
-        $mail->Port = 587;
+        $mail->Username = SMTP_USERNAME;
+        $mail->Password = SMTP_PASSWORD;
+        $mail->SMTPSecure = SMTP_SECURE;
+        $mail->Port = SMTP_PORT;
 
         // Sender
-        $mail->setFrom('no-reply@yourdomain.com', 'Health Locker');
+        $mail->setFrom('notehub11@gmail.com', 'Health Locker');
+
+        // Prepare the update statement once before the loop
+        $updateStmt = $pdo->prepare("UPDATE reminders SET is_sent = TRUE WHERE id = ?");
 
         foreach ($due_reminders as $reminder) {
             try {
@@ -42,13 +45,19 @@ try {
                 // Content
                 $mail->isHTML(true);
                 $mail->Subject = 'Health Locker Reminder';
-                $mail->Body    = "Hi, you have a reminder: <br><b>" . htmlspecialchars($reminder['reminder_text']) . "</b>";
+
+                // Create the email body from the template
+                ob_start();
+                $reminder_text = $reminder['reminder_text'];
+                $user_name = $reminder['name'];
+                include 'email_template.php';
+                $mail->Body = ob_get_clean();
+                
                 $mail->AltBody = "Hi, you have a reminder: " . $reminder['reminder_text'];
 
                 $mail->send();
 
-                // Update the reminder to mark it as sent
-                $updateStmt = $pdo->prepare("UPDATE reminders SET is_sent = TRUE WHERE id = ?");
+                // Execute the prepared statement to mark the reminder as sent
                 $updateStmt->execute([$reminder['id']]);
 
             } catch (Exception $e) {
