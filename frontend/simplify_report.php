@@ -31,7 +31,7 @@ $record_id = $_GET['record_id'];
 try {
     // 1. Fetch the file path from the database
     $stmt = $pdo->prepare("
-        SELECT mr.file_path, mr.fileExt
+        SELECT mr.file_path, mr.file_type
         FROM medical_records mr
         JOIN family_members fm ON mr.member_id = fm.id
         WHERE mr.id = ? AND fm.user_id = ?
@@ -52,7 +52,7 @@ try {
         exit;
     }
 
-    $fileExt = strtolower($record['fileExt']);
+    $fileExt = strtolower($record['file_type']);
     $extractedText = '';
 
     // 2. Extract text based on file type

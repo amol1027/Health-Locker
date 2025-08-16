@@ -17,7 +17,7 @@ $user_id = $_SESSION['user_id'];
 
 try {
     // Verify the record belongs to the user
-    $stmt = $pdo->prepare("SELECT mr.file_path, mr.fileExt FROM medical_records mr 
+    $stmt = $pdo->prepare("SELECT mr.file_path, mr.file_type FROM medical_records mr 
                           JOIN family_members fm ON mr.member_id = fm.id
                           WHERE mr.id = ? AND fm.user_id = ?");
     $stmt->execute([$record_id, $user_id]);
@@ -29,7 +29,7 @@ try {
     }
 
     $file_path = $record['file_path'];
-    $file_ext = strtolower($record['fileExt']);
+    $file_ext = strtolower($record['file_type']);
 
     // Verify file exists and is readable
     if (!file_exists($file_path) || !is_readable($file_path)) {

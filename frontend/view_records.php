@@ -33,7 +33,7 @@ try {
 
     // Then, fetch all medical records for this member, ordered chronologically
  // In your original PHP code, modify the query to include file_type:
-    $stmt = $pdo->prepare("SELECT id, record_type, record_date, doctor_name, hospital_name, fileExt FROM medical_records WHERE member_id = ? ORDER BY record_date DESC");
+    $stmt = $pdo->prepare("SELECT id, record_type, record_date, doctor_name, hospital_name, file_type FROM medical_records WHERE member_id = ? ORDER BY record_date DESC");
     $stmt->execute([$member_id]);
     $records = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
@@ -47,7 +47,7 @@ $start_date = isset($_GET['start_date']) ? $_GET['start_date'] : '';
 $end_date = isset($_GET['end_date']) ? $_GET['end_date'] : '';
 
 // Build the query with filters
-$sql = "SELECT id, record_type, record_date, doctor_name, hospital_name, fileExt 
+$sql = "SELECT id, record_type, record_date, doctor_name, hospital_name, file_type 
         FROM medical_records 
         WHERE member_id = ?";
 $params = [$member_id];
