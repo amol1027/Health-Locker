@@ -60,18 +60,17 @@
 
 ```mermaid
 erDiagram
-    users ||--o{ family_members : "1:N"
-    family_members ||--o{ medical_records : "1:N"
     users {
         int id PK
         varchar(255) name
-        varchar(255) email UNIQUE
+        varchar(255) email
         varchar(255) password
         timestamp email_verified_at
         varchar(100) remember_token
         timestamp created_at
         timestamp updated_at
     }
+    
     family_members {
         int id PK
         int user_id FK
@@ -82,6 +81,7 @@ erDiagram
         text known_allergies
         text chronic_conditions
     }
+    
     medical_records {
         int id PK
         int family_member_id FK
@@ -92,3 +92,6 @@ erDiagram
         json extracted_data
         timestamp created_at
     }
+
+    users ||--o{ family_members : "1:N"
+    family_members ||--o{ medical_records : "1:N"
