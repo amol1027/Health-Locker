@@ -41,36 +41,128 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login - Health Locker</title>
-    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: {
+                            50: '#f0f9ff',
+                            100: '#e0f2fe',
+                            200: '#bae6fd',
+                            300: '#7dd3fc',
+                            400: '#38bdf8',
+                            500: '#0ea5e9',
+                            600: '#0284c7',
+                            700: '#0369a1',
+                            800: '#075985',
+                            900: '#0c4a6e',
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                }
+            }
+        }
+    </script>
 </head>
-<body class="bg-gray-100 flex items-center justify-center min-h-screen">
-    <div class="w-full max-w-md">
-        <form action="login.php" method="POST" class="bg-white shadow-md rounded px-8 pt-6 pb-8 mb-4">
-            <h2 class="text-2xl font-bold text-center mb-6">Log In to Your Account</h2>
-            <div class="mb-4">
-                <label class="block text-gray-700 text-sm font-bold mb-2" for="email">
-                    Email
-                </label>
-                <input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" id="email" name="email" type="email" placeholder="Email Address" required>
-            </div>
-            <div class="mb-6">
-                <label class="block text-gray-700 text-sm font-bold mb-2" for="password">
-                    Password
-                </label>
-                <input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 mb-3 leading-tight focus:outline-none focus:shadow-outline" id="password" name="password" type="password" placeholder="******************" required>
-            </div>
-            <div class="flex items-center justify-between">
-                <button class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline" type="submit">
-                    Log In
+<body class="font-sans antialiased text-gray-800 bg-gray-50">
+    <!-- Header -->
+    <header class="fixed w-full bg-white shadow-sm z-50">
+        <div class="container mx-auto px-4 sm:px-6 lg:px-8">
+            <nav class="flex justify-between items-center py-4">
+                <a href="../index.php" class="text-2xl font-bold text-primary-600">Health Locker</a>
+                <div class="hidden md:flex items-center space-x-8">
+                    <a href="../index.php#features" class="text-gray-600 hover:text-primary-600 transition-colors duration-200 font-medium">Features</a>
+                    <a href="../index.php#about" class="text-gray-600 hover:text-primary-600 transition-colors duration-200 font-medium">About</a>
+                    <a href="../index.php#contact" class="text-gray-600 hover:text-primary-600 transition-colors duration-200 font-medium">Contact</a>
+                    <a href="login.php" class="px-4 py-2 border border-primary-600 text-primary-600 rounded-lg hover:bg-primary-50 transition-colors duration-200 font-medium">Login</a>
+                    <a href="register.php" class="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors duration-200 font-medium">Sign Up</a>
+                </div>
+                <button class="md:hidden text-gray-600 focus:outline-none">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
+                    </svg>
                 </button>
-                <a class="inline-block align-baseline font-bold text-sm text-blue-500 hover:text-blue-800" href="register.php">
-                    Don't have an account? Register
-                </a>
+            </nav>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="flex-grow flex items-center justify-center pt-24 pb-12">
+        <div class="w-full max-w-md px-4">
+            <div class="bg-white rounded-xl shadow-lg overflow-hidden">
+                <div class="p-8">
+                    <div class="text-center mb-8">
+                        <h2 class="text-3xl font-bold text-gray-900 mb-2">Welcome Back</h2>
+                        <p class="text-gray-600">Sign in to access your Health Locker</p>
+                    </div>
+
+                    <form action="login.php" method="POST" class="space-y-6">
+                        <div>
+                            <label for="email" class="block text-sm font-medium text-gray-700 mb-1">Email Address</label>
+                            <input 
+                                id="email" 
+                                name="email" 
+                                type="email" 
+                                required
+                                class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all duration-200"
+                                placeholder="you@example.com"
+                            >
+                        </div>
+
+                        <div>
+                            <label for="password" class="block text-sm font-medium text-gray-700 mb-1">Password</label>
+                            <input 
+                                id="password" 
+                                name="password" 
+                                type="password" 
+                                required
+                                class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all duration-200"
+                                placeholder="••••••••"
+                            >
+                        </div>
+
+                        <button 
+                            type="submit" 
+                            class="w-full bg-primary-600 text-white font-semibold py-3 px-4 rounded-lg hover:bg-primary-700 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2"
+                        >
+                            Sign In
+                        </button>
+
+                        <?php if (!empty($message)): ?>
+                            <div class="mt-4 p-3 rounded-lg text-sm <?php echo strpos($message, 'successful') !== false ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'; ?>">
+                                <?php echo $message; ?>
+                            </div>
+                        <?php endif; ?>
+                    </form>
+                </div>
+
+                <div class="px-8 py-4 bg-gray-50 border-t border-gray-100 text-center">
+                    <p class="text-sm text-gray-600">
+                        Don't have an account? 
+                        <a href="register.php" class="font-medium text-primary-600 hover:text-primary-500">Sign up</a>
+                    </p>
+                </div>
             </div>
-            <?php if (isset($message)): ?>
-                <p class="text-center mt-4 <?php echo strpos($message, 'successful') !== false ? 'text-green-500' : 'text-red-500'; ?>"><?php echo $message; ?></p>
-            <?php endif; ?>
-        </form>
-    </div>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-gray-900 text-white py-12">
+        <div class="container mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="border-t border-gray-800 mt-8 pt-8 flex flex-col md:flex-row justify-between items-center">
+                <p class="text-gray-400 mb-4 md:mb-0">&copy; 2024 Health Locker. All rights reserved.</p>
+                <div class="flex space-x-6">
+                    <a href="#" class="text-gray-400 hover:text-white transition-colors duration-200">Privacy Policy</a>
+                    <a href="#" class="text-gray-400 hover:text-white transition-colors duration-200">Terms of Service</a>
+                    <a href="#" class="text-gray-400 hover:text-white transition-colors duration-200">Cookie Policy</a>
+                </div>
+            </div>
+        </div>
+    </footer>
 </body>
 </html>
