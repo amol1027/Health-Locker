@@ -25,4 +25,7 @@ define('SMTP_PASSWORD', 'eere knum lpxq wzli');
 define('SMTP_PORT', 587);
 define('SMTP_SECURE', 'tls');
 
+// Gemini API Key
+define('GEMINI_API_KEY', 'AIzaSyAENpIPg_f8VjR9UHjG-wPvOEjSzqtIeKI');
+
 ?>

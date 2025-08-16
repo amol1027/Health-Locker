@@ -1,15 +1,37 @@
 # Health Locker
 
-Health Locker is a web-based application that allows users to securely store and manage health records for themselves and their family members.
+Health Locker is a web-based application that allows users to securely store and manage health records for themselves and their family members. This application provides a centralized platform to keep track of medical history, appointments, and other important health information.
 
 ## Features
 
-*   User registration and login
-*   Add and manage family members
-*   Upload and view health records for each family member
-*   Set reminders for family members for appointments or medication.
-*   Securely stores health records
-*   Dashboard to view all family members
+*   **User Authentication:** Secure user registration and login system.
+*   **Family Member Management:** Add and manage profiles for multiple family members.
+*   **Health Record Management:** Upload, view, and organize health records (including PDFs and images) for each family member.
+*   **AI-Powered Report Simplification:** Automatically simplifies complex medical reports from PDFs or images into easy-to-understand summaries using AI.
+*   **Reminders:** Set reminders for appointments, medications, and other health-related events.
+*   **Secure Storage:** Ensures that all health records are stored securely.
+*   **Dashboard:** A comprehensive dashboard to view all family members and their recent activities.
+
+## Project Structure
+
+The project is organized into the following directories:
+
+*   `config/`: Contains the database and SMTP configuration file (`config.php`).
+*   `database/`: Includes the database schema file (`health_sys.sql`).
+*   `frontend/`: Contains the main application logic and user interface files.
+*   `user/`: Handles user authentication, including registration, login, and logout.
+*   `uploads/`: The directory where uploaded health records are stored.
+*   `vendor/`: Contains composer dependencies.
+
+## Database Schema
+
+The database consists of three main tables:
+
+*   `users`: Stores user information, including email and password.
+*   `family_members`: Stores information about family members, linked to a user account.
+*   `medical_records`: Stores medical records for each family member, including record type, date, and file path.
+
+The database schema and relationships are defined in the `database/health_sys.sql` file.
 
 ## Technologies Used
 
@@ -31,7 +53,7 @@ Health Locker is a web-based application that allows users to securely store and
     *   Create a new database named `health_sys`.
 
 4.  **Import the database schema:**
-    *   A SQL file with the required tables will be provided in the future. For now, you will need to create the tables manually.
+    *   Import the `database/health_sys.sql` file into the `health_sys` database. This will create the necessary tables.
 
 ## Database Configuration
 
@@ -46,7 +68,7 @@ Health Locker is a web-based application that allows users to securely store and
 
 ## Usage
 
-1.  Open your web browser and navigate to the project's URL (e.g., `http://localhost/Health-Locker/frontend/register.php`).
+1.  Open your web browser and navigate to the project's URL (e.g., `http://localhost/Health-Locker/user/register.php`).
 2.  Register a new account.
 3.  Log in with your credentials.
 4.  Add family members to your profile.

@@ -234,37 +234,20 @@ try {
         <div class="bg-white shadow overflow-hidden sm:rounded-lg">
             <?php if (isset($records) && !empty($records)): ?>
                 <ul class="divide-y divide-gray-200">
-                    <?php foreach ($records as $record): ?>
-                        <li class="hover:bg-gray-50 transition duration-150 ease-in-out">
-                            <div class="px-4 py-4 sm:px-6">
-                                <div class="flex items-center justify-between">
+                        <?php foreach ($records as $record): ?>
+                            <li class="hover:bg-gray-50 transition duration-150 ease-in-out">
+                                <div class="px-4 py-4 sm:px-6 flex items-center justify-between">
                                     <div class="flex items-center">
-                                        <?php 
-                                            $iconClass = 'text-blue-500';
-                                            $icon = 'fa-file-medical'; // Default icon
-                                            
-                                            switch($record['record_type']) {
-                                                case 'Prescription':
-                                                    $icon = 'fa-prescription-bottle-alt';
-                                                    $iconClass = 'text-green-500';
-                                                    break;
-                                                case 'Lab Report':
-                                                    $icon = 'fa-flask';
-                                                    $iconClass = 'text-purple-500';
-                                                    break;
-                                                case 'Scan':
-                                                    $icon = 'fa-x-ray';
-                                                    $iconClass = 'text-yellow-500';
-                                                    break;
-                                                case 'Discharge Summary':
-                                                    $icon = 'fa-file-signature';
-                                                    $iconClass = 'text-red-500';
-                                                    break;
-                                                case 'Vaccination':
-                                                    $icon = 'fa-syringe';
-                                                    $iconClass = 'text-indigo-500';
-                                                    break;
-                                            }
+                                        <?php
+                                        $icon = 'fa-file-medical';
+                                        $iconClass = 'text-gray-500';
+                                        switch ($record['record_type']) {
+                                            case 'Prescription': $icon = 'fa-prescription-bottle-alt'; $iconClass = 'text-green-500'; break;
+                                            case 'Lab Report': $icon = 'fa-flask'; $iconClass = 'text-purple-500'; break;
+                                            case 'Scan': $icon = 'fa-x-ray'; $iconClass = 'text-yellow-500'; break;
+                                            case 'Discharge Summary': $icon = 'fa-file-signature'; $iconClass = 'text-red-500'; break;
+                                            case 'Vaccination': $icon = 'fa-syringe'; $iconClass = 'text-indigo-500'; break;
+                                        }
                                         ?>
                                         <div class="flex-shrink-0 mr-4">
                                             <i class="fas <?php echo $icon; ?> text-2xl <?php echo $iconClass; ?>"></i>
@@ -288,237 +271,108 @@ try {
                                             </div>
                                         </div>
                                     </div>
-                                    <div class="ml-4 flex-shrink-0">
-                                        <a href="#" onclick="openViewRecordModal(<?php echo $record['id']; ?>)" class="inline-flex items-center px-3 py-1 border border-transparent text-sm leading-5 font-medium rounded-md text-blue-700 bg-blue-100 hover:bg-blue-200 focus:outline-none focus:ring-2 focus:ring-blue-500">
-    <i class="fas fa-eye mr-1"></i> View
-</a>
+                                    <div class="ml-4 flex-shrink-0 flex space-x-2">
+                                        <a href="view_file.php?record_id=<?php echo $record['id']; ?>&preview=1" target="_blank" class="text-sm font-medium text-blue-600 hover:text-blue-800">View File</a>
+                                        <button onclick="getSimplifiedReport(<?php echo $record['id']; ?>)" class="text-sm font-medium text-green-600 hover:text-green-800">Simplify</button>
                                     </div>
                                 </div>
-                            </div>
-                        </li>
-                    <?php endforeach; ?>
-                </ul>
-            <?php else: ?>
-                <div class="text-center py-12">
-                    <i class="fas fa-file-medical text-4xl text-gray-400 mb-4"></i>
-                    <h3 class="text-lg font-medium text-gray-900">No medical records found</h3>
-                    <p class="mt-1 text-sm text-gray-500">Get started by uploading a new medical record.</p>
-                    <div class="mt-6">
-                        <a href="upload_record.php?member_id=<?php echo htmlspecialchars($member_id); ?>" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
-                            <i class="fas fa-plus mr-2"></i> Upload Record
-                        </a>
+                            </li>
+                        <?php endforeach; ?>
+                    </ul>
+                <?php else: ?>
+                    <div class="text-center py-12 px-6">
+                        <i class="fas fa-folder-open text-5xl text-gray-400 mb-4"></i>
+                        <h3 class="text-lg font-medium text-gray-800">No Records Found</h3>
+                        <p class="text-gray-500 mt-2">No medical records have been uploaded for this family member yet.</p>
                     </div>
-                </div>
-            <?php endif; ?>
-        </div>
+                <?php endif; ?>
+            </div>
     </div>
 
     <!-- View Record Modal -->
-<div id="viewRecordModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden z-50 flex items-center justify-center p-4">
-    <div class="bg-white rounded-lg shadow-xl w-full max-w-2xl">
-        <div class="flex justify-between items-center p-4 border-b">
-            <h3 class="text-xl font-semibold" id="modalRecordTitle">Record Details</h3>
-            <button id="closeViewModalBtn" class="text-gray-500 hover:text-gray-700">
-                <i class="fas fa-times"></i>
-            </button>
-        </div>
-        <div class="p-6">
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                    <h4 class="font-medium text-gray-900">Record Information</h4>
-                    <div class="mt-4 space-y-3">
-                        <p><span class="text-gray-600">Type:</span> <span id="modalRecordType"></span></p>
-                        <p><span class="text-gray-600">Date:</span> <span id="modalRecordDate"></span></p>
-                        <p><span class="text-gray-600">Doctor:</span> <span id="modalRecordDoctor"></span></p>
-                        <p><span class="text-gray-600">Hospital:</span> <span id="modalRecordHospital"></span></p>
-                    </div>
-                </div>
-                <div>
-                    <h4 class="font-medium text-gray-900">Document Preview</h4>
-                    <div class="mt-4 border-2 border-dashed border-gray-300 rounded-lg p-4 flex items-center justify-center min-h-40">
-                        <iframe id="recordPreview" class="w-full h-64 hidden"></iframe>
-                        <div id="noPreview" class="text-center text-gray-500">
-                            <i class="fas fa-file-alt text-4xl mb-2"></i>
-                            <p>Preview not available</p>
-                        </div>
-                    </div>
-                </div>
+    <div id="viewRecordModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-lg shadow-xl w-full max-w-2xl">
+            <div class="flex justify-between items-center p-4 border-b">
+                <h3 class="text-xl font-semibold" id="modalRecordTitle">Record Details</h3>
+                <button id="closeViewModalBtn" class="text-gray-500 hover:text-gray-700"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="p-6">
+                <!-- Modal content goes here -->
+            </div>
+            <div class="flex justify-end p-4 border-t space-x-3">
+                <button id="downloadRecordBtn" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"><i class="fas fa-download mr-2"></i> Download</button>
+                <button id="closeModalFooterBtn" class="px-4 py-2 bg-gray-200 text-gray-800 rounded hover:bg-gray-300">Close</button>
             </div>
         </div>
-        <div class="flex justify-end p-4 border-t space-x-3">
-            <button id="downloadRecordBtn" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
-                <i class="fas fa-download mr-2"></i> Download
-            </button>
-            <button id="closeModalFooterBtn" class="px-4 py-2 bg-gray-200 text-gray-800 rounded hover:bg-gray-300">
-    Close
-</button>
+    </div>
+
+    <!-- Gemini Modal -->
+    <div id="geminiModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full hidden z-50">
+        <div class="relative top-20 mx-auto p-5 border w-3/4 max-w-2xl shadow-lg rounded-md bg-white">
+            <div class="flex justify-between items-center pb-3">
+                <h3 class="text-xl font-semibold text-gray-800">Simplified Report</h3>
+                <span class="text-2xl text-gray-500 cursor-pointer" id="closeGeminiModal">&times;</span>
+            </div>
+            <div id="geminiResponseContent" class="mt-4 p-4 bg-gray-50 rounded-md overflow-auto max-h-96"><p>Loading...</p></div>
+            
         </div>
     </div>
-</div>
+
 <script>
-// View Record Modal Functionality
 document.addEventListener('DOMContentLoaded', function() {
-    // Modal elements
     const viewModal = document.getElementById('viewRecordModal');
-    const closeViewModalBtn = document.getElementById('closeViewModalBtn');
-    const downloadRecordBtn = document.getElementById('downloadRecordBtn');
     const filterModal = document.getElementById('filterModal');
-    
-    // Function to open view modal with record data
-    window.openViewRecordModal = function(recordId) {
-        console.log('Attempting to open record:', recordId);
-        
-        // Show loading state
-        document.getElementById('modalRecordTitle').textContent = 'Loading...';
-        document.getElementById('modalRecordType').textContent = '';
-        document.getElementById('modalRecordDate').textContent = '';
-        document.getElementById('modalRecordDoctor').textContent = '';
-        document.getElementById('modalRecordHospital').textContent = '';
-        document.getElementById('recordPreview').classList.add('hidden');
-        document.getElementById('noPreview').classList.remove('hidden');
-        
-        // Show modal immediately while loading data
-        viewModal.classList.remove('hidden');
-        
-        // Fetch record details via AJAX
-        fetch(`get_record_details.php?record_id=${recordId}`)
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
-                return response.json();
-            })
-            .then(data => {
-                console.log('Record data received:', data);
-                
-                if (!data || data.error) {
-                    throw new Error(data?.error || 'Invalid data received');
-                }
-                
-                // Populate modal with data
-                document.getElementById('modalRecordTitle').textContent = data.record_type || 'Record Details';
-                document.getElementById('modalRecordType').textContent = data.record_type || 'Not specified';
-                document.getElementById('modalRecordDate').textContent = data.record_date ? 
-                    new Date(data.record_date).toLocaleDateString() : 'Unknown date';
-                document.getElementById('modalRecordDoctor').textContent = data.doctor_name || 'N/A';
-                document.getElementById('modalRecordHospital').textContent = data.hospital_name || 'N/A';
-                
-                // Set download link
-                if (downloadRecordBtn) {
-                    downloadRecordBtn.onclick = () => {
-                        window.location.href = `download_record.php?record_id=${recordId}`;
-                    };
-                }
-                
-                // Show preview if available
-                const preview = document.getElementById('recordPreview');
-                const noPreview = document.getElementById('noPreview');
-                
-// Replace the preview handling code with this:
-if (data.file_type && data.file_type.toLowerCase() === 'pdf') {
-    // For PDFs, use an iframe with proper URL parameters
-    preview.src = `view_file.php?record_id=${recordId}&preview=1#toolbar=0&navpanes=0&scrollbar=0`;
-    preview.classList.remove('hidden');
-    noPreview.classList.add('hidden');
+    const geminiModal = document.getElementById('geminiModal');
 
-} else if (data.file_type && ['jpg', 'jpeg', 'png'].includes(data.file_type.toLowerCase())) {
-    // For images, create an img element dynamically
-    const img = document.createElement('img');
-    img.src = `view_file.php?record_id=${recordId}&preview=1`;
-    img.className = 'max-h-64 max-w-full object-contain';
-    
-    // Handle image load errors
-    img.onerror = function () {
-        this.parentElement.innerHTML = `
-            <i class="fas fa-file-alt text-4xl mb-2"></i>
-            <p>Could not load image preview</p>
-        `;
+    // Generic function to open a modal
+    window.openModal = (modal) => modal.classList.remove('hidden');
+    // Generic function to close all modals
+    const closeAllModals = () => {
+        document.querySelectorAll('.fixed.inset-0').forEach(modal => modal.classList.add('hidden'));
+        geminiModal.style.display = 'none'; // Since its visibility is controlled by display property
     };
 
-    noPreview.innerHTML = `
-        <div class="flex flex-col items-center"></div>
-        <p class="mt-2 text-sm">Image Preview</p>
-    `;
-
-    // Insert image into the first div
-    noPreview.querySelector('div').appendChild(img);
-
-    noPreview.classList.remove('hidden');
-    preview.classList.add('hidden');
-
-} else {
-    // For unsupported types
-    preview.classList.add('hidden');
-    noPreview.classList.remove('hidden');
-    noPreview.innerHTML = `
-        <i class="fas fa-file-alt text-4xl mb-2"></i>
-        <p>Preview not available for ${data.file_type || 'this file type'}</p>
-    `;
-}
-
-            })
-            .catch(error => {
-                console.error('Error loading record:', error);
-                document.getElementById('modalRecordTitle').textContent = 'Error Loading Record';
-                alert('Failed to load record details. Please try again.');
-            });
-    };
-
-    // Close view modal
-    if (closeViewModalBtn) {
-        closeViewModalBtn.addEventListener('click', () => {
-            viewModal.classList.add('hidden');
-        });
-    }
-const closeModalFooterBtn = document.getElementById('closeModalFooterBtn');
-if (closeModalFooterBtn) {
-    closeModalFooterBtn.addEventListener('click', () => {
-        viewModal.classList.add('hidden');
+    // Setup close buttons for all modals
+    document.querySelectorAll('#closeViewModalBtn, #closeModalFooterBtn, #closeModalBtn, #closeGeminiModal').forEach(btn => {
+        if(btn) btn.addEventListener('click', closeAllModals);
     });
-}
-    // Close modal when clicking outside
+
+    // Close modals on outside click
     window.addEventListener('click', (event) => {
-        if (event.target === viewModal) {
-            viewModal.classList.add('hidden');
-        }
-        if (event.target === filterModal) {
-            filterModal.classList.add('hidden');
+        if (event.target === viewModal || event.target === filterModal || event.target === geminiModal) {
+            closeAllModals();
         }
     });
 
-    // Filter Modal Functionality
-    const openFilterBtn = document.getElementById('openModalBtn');
-    const closeFilterBtn = document.getElementById('closeModalBtn');
-    const resetFilterBtn = document.getElementById('resetFiltersBtn');
-
-    if (openFilterBtn) {
-        openFilterBtn.addEventListener('click', () => {
-            filterModal.classList.remove('hidden');
-        });
-    }
-
-    if (closeFilterBtn) {
-        closeFilterBtn.addEventListener('click', () => {
-            filterModal.classList.add('hidden');
-        });
-    }
-
-    if (resetFilterBtn) {
-        resetFilterBtn.addEventListener('click', () => {
-            document.getElementById('search_query').value = '';
-            document.getElementById('record_type_filter').value = '';
-            document.getElementById('start_date').value = '';
-            document.getElementById('end_date').value = '';
-        });
-    }
-
-    // Escape key to close modals
+    // Close modals on Escape key
     document.addEventListener('keydown', (event) => {
-        if (event.key === 'Escape') {
-            viewModal.classList.add('hidden');
-            filterModal.classList.add('hidden');
-        }
+        if (event.key === 'Escape') closeAllModals();
     });
+
+    // Filter Modal specific logic
+    const openFilterBtn = document.getElementById('openModalBtn');
+    if(openFilterBtn) openFilterBtn.addEventListener('click', () => filterModal.classList.remove('hidden'));
+    const resetFilterBtn = document.getElementById('resetFiltersBtn');
+    if(resetFilterBtn) resetFilterBtn.addEventListener('click', () => {
+        document.getElementById('search_query').value = '';
+        document.getElementById('record_type_filter').value = '';
+        document.getElementById('start_date').value = '';
+        document.getElementById('end_date').value = '';
+    });
+
+    // Gemini Modal logic
+    window.getSimplifiedReport = async function(recordId) {
+        geminiModal.style.display = 'block';
+        const contentDiv = document.getElementById('geminiResponseContent');
+        contentDiv.innerHTML = '<p>Simplifying your report... This may take a moment.</p>';
+        try {
+            const response = await fetch(`simplify_report.php?record_id=${recordId}`);
+            const data = await response.json();
+            contentDiv.innerHTML = data.status === 'success' ? data.simplified_text : `<p class="text-red-500">Error: ${data.message}</p>`;
+        } catch (error) {
+            contentDiv.innerHTML = '<p class="text-red-500">A network or server error occurred.</p>';
+        }
+    };
 });
 </script>
 </body>
