@@ -13,14 +13,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     } else {
         try {
             // Fetch user from the database
-            $stmt = $pdo->prepare("SELECT id, password FROM users WHERE email = ?");
+            $stmt = $pdo->prepare("SELECT id,name, password FROM users WHERE email = ?");
             $stmt->execute([$email]);
             $user = $stmt->fetch();
 
             // Verify the password
             if ($user && password_verify($password, $user['password'])) {
                 // Password is correct, start a session and store user ID
-                $_SESSION['user_id'] = $user['id'];
+                $_SESSION['user_id'] = $user['id']; 
+                $_SESSION['user_name'] = $user['name'];
+
+                
                 
                 $message = 'Login successful! Redirecting to your dashboard...';
                 // Redirect to dashboard

@@ -93,8 +93,35 @@ try {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Medical Records - Health Locker</title>
-    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: {
+                            50: '#f0f9ff',
+                            100: '#e0f2fe',
+                            200: '#bae6fd',
+                            300: '#7dd3fc',
+                            400: '#38bdf8',
+                            500: '#0ea5e9',
+                            600: '#0284c7',
+                            700: '#0369a1',
+                            800: '#075985',
+                            900: '#0c4a6e',
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                }
+            }
+        }
+    </script>
 </head>
 <body class="bg-gray-50 font-sans">
     
@@ -118,13 +145,13 @@ try {
             <input type="text" id="search_query" name="search_query" 
                    value="<?php echo isset($_GET['search_query']) ? htmlspecialchars($_GET['search_query']) : ''; ?>" 
                    placeholder="Doctor, hospital, or keywords..." 
-                   class="pl-10 w-full py-2 px-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                   class="pl-10 w-full py-2 px-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500">
         </div>
     </div>
     <div class="mb-4">
         <label for="record_type_filter" class="block text-gray-700 text-sm font-medium mb-2">Record Type</label>
         <select id="record_type_filter" name="record_type_filter" 
-                class="w-full py-2 px-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                class="w-full py-2 px-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500">
             <option value="">All Record Types</option>
             <option value="Prescription" <?php echo (isset($_GET['record_type_filter']) && $_GET['record_type_filter'] === 'Prescription' ? 'selected' : ''); ?>>Prescription</option>
             <option value="Lab Report" <?php echo (isset($_GET['record_type_filter']) && $_GET['record_type_filter'] === 'Lab Report' ? 'selected' : ''); ?>>Lab Report</option>
@@ -141,21 +168,21 @@ try {
                 <label for="start_date" class="block text-xs text-gray-500 mb-1">From</label>
                 <input type="date" id="start_date" name="start_date" 
                        value="<?php echo isset($_GET['start_date']) ? htmlspecialchars($_GET['start_date']) : ''; ?>" 
-                       class="w-full py-2 px-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                       class="w-full py-2 px-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500">
             </div>
             <div>
                 <label for="end_date" class="block text-xs text-gray-500 mb-1">To</label>
                 <input type="date" id="end_date" name="end_date" 
                        value="<?php echo isset($_GET['end_date']) ? htmlspecialchars($_GET['end_date']) : ''; ?>" 
-                       class="w-full py-2 px-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                       class="w-full py-2 px-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500">
             </div>
         </div>
     </div>
                 <div class="flex justify-end space-x-3 pt-4 border-t">
-                    <button type="button" id="resetFiltersBtn" class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <button type="button" id="resetFiltersBtn" class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-primary-500">
                         Reset
                     </button>
-                    <button type="submit" class="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <button type="submit" class="px-4 py-2 text-sm font-medium text-white bg-primary-600 rounded-md hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-500">
                         Apply Filters
                     </button>
                 </div>
@@ -164,57 +191,53 @@ try {
     </div>
 
     <!-- Navigation Bar -->
-    <nav class="bg-white shadow-sm">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex justify-between h-16">
-                <div class="flex items-center">
-                    <span class="text-xl font-bold text-blue-600">HealthLocker</span>
-                </div>
+    <header class="bg-white shadow-sm">
+        <div class="container mx-auto px-4 sm:px-6 lg:px-8">
+            <nav class="flex justify-between items-center py-4">
+                <div class="text-2xl font-bold text-primary-600">Health Locker</div>
                 <div class="flex items-center space-x-4">
-                    <a href="dashboard.php" class="text-gray-600 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium flex items-center">
+                    <a href="dashboard.php" class="text-gray-600 hover:text-primary-600 px-3 py-2 rounded-md text-sm font-medium flex items-center">
                         <i class="fas fa-home mr-2"></i> Dashboard
                     </a>
-                    <a href="../user/logout.php" class="text-gray-600 hover:text-red-600 px-3 py-2 rounded-md text-sm font-medium flex items-center">
-                        <i class="fas fa-sign-out-alt mr-2"></i> Log Out
-                    </a>
+                    <a href="../user/logout.php" class="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors duration-200 font-medium">Log Out</a>
                 </div>
-            </div>
+            </nav>
         </div>
-    </nav>
+    </header>
 
     <!-- Main Content -->
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div class="container mx-auto mt-10 p-4 sm:px-6 lg:px-8">
         <div class="flex flex-col md:flex-row md:justify-between md:items-center mb-8">
             
             <div class="mb-4 md:mb-0">
-                <h1 class="text-2xl font-bold text-gray-900">Medical Records</h1>
-                <p class="text-gray-600">For <?php echo htmlspecialchars($member_name); ?></p>
+                <h1 class="text-3xl font-bold text-gray-800">Medical Records</h1>
+                <p class="text-gray-600 text-lg">For <?php echo htmlspecialchars($member_name); ?></p>
             </div>
             
            <div class="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2">
             
     <?php if (isset($_GET['search_query']) || isset($_GET['record_type_filter']) || isset($_GET['start_date']) || isset($_GET['end_date'])): ?>
         <a href="view_records.php?member_id=<?php echo htmlspecialchars($member_id); ?>" 
-           class="bg-gray-200 text-gray-700 px-4 py-2 rounded-md shadow-sm text-sm font-medium hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 flex items-center justify-center">
+           class="bg-gray-200 text-gray-700 px-4 py-2 rounded-lg shadow-sm text-sm font-medium hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-primary-500 flex items-center justify-center">
             <i class="fas fa-times mr-2"></i> Clear Filters
         </a>
     <?php endif; ?>
-    <button id="openModalBtn" class="bg-white border border-gray-300 text-gray-700 px-4 py-2 rounded-md shadow-sm text-sm font-medium hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 flex items-center justify-center">
+    <button id="openModalBtn" class="bg-white border border-gray-300 text-gray-700 px-4 py-2 rounded-lg shadow-sm text-sm font-medium hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-primary-500 flex items-center justify-center">
         <i class="fas fa-filter mr-2"></i> Filter Records
     </button>
-    <a href="upload_record.php?member_id=<?php echo htmlspecialchars($member_id); ?>" class="bg-blue-600 text-white px-4 py-2 rounded-md shadow-sm text-sm font-medium hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 flex items-center justify-center">
+    <a href="upload_record.php?member_id=<?php echo htmlspecialchars($member_id); ?>" class="bg-primary-600 text-white px-4 py-2 rounded-lg shadow-sm text-sm font-medium hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-500 flex items-center justify-center">
         <i class="fas fa-plus mr-2"></i> Upload Record
     </a>
-    <a href="../remainders/add_reminder.php?member_id=<?php echo htmlspecialchars($member_id); ?>" class="bg-green-600 text-white px-4 py-2 rounded-md shadow-sm text-sm font-medium hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 flex items-center justify-center">
+    <a href="../remainders/add_reminder.php?member_id=<?php echo htmlspecialchars($member_id); ?>" class="bg-green-600 text-white px-4 py-2 rounded-lg shadow-sm text-sm font-medium hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 flex items-center justify-center">
         <i class="fas fa-bell mr-2"></i> Set Reminder
     </a>
 </div>
         </div>
 <!-- After the heading section -->
 <?php if (isset($_GET['search_query']) || isset($_GET['record_type_filter']) || isset($_GET['start_date']) || isset($_GET['end_date'])): ?>
-    <div class="mb-4 p-3 bg-blue-50 text-blue-800 rounded-md">
-        <p class="font-medium">Active Filters:</p>
-        <ul class="list-disc list-inside">
+    <div class="mb-6 p-4 bg-primary-50 text-primary-800 rounded-lg">
+        <p class="font-semibold text-lg mb-2">Active Filters:</p>
+        <ul class="list-disc list-inside space-y-1">
             <?php if (isset($_GET['search_query']) && !empty($_GET['search_query'])): ?>
                 <li>Search: "<?php echo htmlspecialchars($_GET['search_query']); ?>"</li>
             <?php endif; ?>
@@ -231,12 +254,12 @@ try {
     </div>
 <?php endif; ?>
         <!-- Records List -->
-        <div class="bg-white shadow overflow-hidden sm:rounded-lg">
+        <div class="bg-white shadow-lg overflow-hidden sm:rounded-xl">
             <?php if (isset($records) && !empty($records)): ?>
                 <ul class="divide-y divide-gray-200">
                         <?php foreach ($records as $record): ?>
                             <li class="hover:bg-gray-50 transition duration-150 ease-in-out">
-                                <div class="px-4 py-4 sm:px-6 flex items-center justify-between">
+                                <div class="px-6 py-5 flex items-center justify-between">
                                     <div class="flex items-center">
                                         <?php
                                         $icon = 'fa-file-medical';
@@ -249,46 +272,45 @@ try {
                                             case 'Vaccination': $icon = 'fa-syringe'; $iconClass = 'text-indigo-500'; break;
                                         }
                                         ?>
-                                        <div class="flex-shrink-0 mr-4">
-                                            <i class="fas <?php echo $icon; ?> text-2xl <?php echo $iconClass; ?>"></i>
+                                        <div class="flex-shrink-0 mr-5">
+                                            <i class="fas <?php echo $icon; ?> text-3xl <?php echo $iconClass; ?>"></i>
                                         </div>
                                         <div>
-                                            <div class="text-sm font-medium text-blue-600"><?php echo htmlspecialchars($record['record_type']); ?></div>
-                                            <div class="text-sm text-gray-500 mt-1">
-                                                <span class="inline-flex items-center mr-3">
-                                                    <i class="far fa-calendar-alt mr-1"></i> <?php echo date("M d, Y", strtotime($record['record_date'])); ?>
+                                            <div class="text-lg font-semibold text-primary-700"><?php echo htmlspecialchars($record['record_type']); ?></div>
+                                            <div class="text-sm text-gray-600 mt-1">
+                                                <span class="inline-flex items-center mr-4">
+                                                    <i class="far fa-calendar-alt mr-2 text-gray-400"></i> <?php echo date("M d, Y", strtotime($record['record_date'])); ?>
                                                 </span>
                                                 <?php if (!empty($record['doctor_name'])): ?>
-                                                    <span class="inline-flex items-center mr-3">
-                                                        <i class="fas fa-user-md mr-1"></i> <?php echo htmlspecialchars($record['doctor_name']); ?>
+                                                    <span class="inline-flex items-center mr-4">
+                                                        <i class="fas fa-user-md mr-2 text-gray-400"></i> <?php echo htmlspecialchars($record['doctor_name']); ?>
                                                     </span>
                                                 <?php endif; ?>
                                                 <?php if (!empty($record['hospital_name'])): ?>
                                                     <span class="inline-flex items-center">
-                                                        <i class="fas fa-hospital mr-1"></i> <?php echo htmlspecialchars($record['hospital_name']); ?>
+                                                        <i class="fas fa-hospital mr-2 text-gray-400"></i> <?php echo htmlspecialchars($record['hospital_name']); ?>
                                                     </span>
                                                 <?php endif; ?>
                                             </div>
                                         </div>
                                     </div>
-                                    <div class="ml-4 flex-shrink-0 flex space-x-2">
-                                        <a href="view_file.php?record_id=<?php echo $record['id']; ?>&preview=1" target="_blank" class="text-sm font-medium text-blue-600 hover:text-blue-800">View File</a>
-                                        <button onclick="getSimplifiedReport(<?php echo $record['id']; ?>)" class="text-sm font-medium text-green-600 hover:text-green-800">Simplify</button>
+                                    <div class="ml-4 flex-shrink-0 flex space-x-3">
+                                        <a href="view_file.php?record_id=<?php echo $record['id']; ?>&preview=1" target="_blank" class="px-3 py-1 bg-primary-100 text-primary-700 rounded-full text-sm font-medium hover:bg-primary-200">View File</a>
+                                        <button onclick="getSimplifiedReport(<?php echo $record['id']; ?>)" class="px-3 py-1 bg-green-100 text-green-700 rounded-full text-sm font-medium hover:bg-green-200">Simplify</button>
                                     </div>
                                 </div>
                             </li>
                         <?php endforeach; ?>
                     </ul>
                 <?php else: ?>
-                    <div class="text-center py-12 px-6">
-                        <i class="fas fa-folder-open text-5xl text-gray-400 mb-4"></i>
-                        <h3 class="text-lg font-medium text-gray-800">No Records Found</h3>
-                        <p class="text-gray-500 mt-2">No medical records have been uploaded for this family member yet.</p>
+                    <div class="text-center py-20 px-6">
+                        <i class="fas fa-folder-open text-6xl text-gray-300 mb-5"></i>
+                        <h3 class="text-xl font-semibold text-gray-800">No Records Found</h3>
+                        <p class="text-gray-500 mt-2 max-w-md mx-auto">No medical records have been uploaded for this family member yet. Click the "Upload Record" button to add one.</p>
                     </div>
                 <?php endif; ?>
             </div>
     </div>
-
     <!-- View Record Modal -->
     <div id="viewRecordModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden z-50 flex items-center justify-center p-4">
         <div class="bg-white rounded-lg shadow-xl w-full max-w-2xl">
@@ -300,23 +322,71 @@ try {
                 <!-- Modal content goes here -->
             </div>
             <div class="flex justify-end p-4 border-t space-x-3">
-                <button id="downloadRecordBtn" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"><i class="fas fa-download mr-2"></i> Download</button>
+                <button id="downloadRecordBtn" class="px-4 py-2 bg-primary-600 text-white rounded hover:bg-primary-700"><i class="fas fa-download mr-2"></i> Download</button>
                 <button id="closeModalFooterBtn" class="px-4 py-2 bg-gray-200 text-gray-800 rounded hover:bg-gray-300">Close</button>
             </div>
         </div>
     </div>
-
-    <!-- Gemini Modal -->
-    <div id="geminiModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full hidden z-50">
-        <div class="relative top-20 mx-auto p-5 border w-3/4 max-w-2xl shadow-lg rounded-md bg-white">
-            <div class="flex justify-between items-center pb-3">
-                <h3 class="text-xl font-semibold text-gray-800">Simplified Report</h3>
-                <span class="text-2xl text-gray-500 cursor-pointer" id="closeGeminiModal">&times;</span>
+<!-- Gemini Modal -->
+<div id="geminiModal" class="fixed inset-0 bg-gray-800 bg-opacity-0 overflow-y-auto h-full w-full hidden z-50 flex items-center justify-center p-4" style="pointer-events: none;">
+    <div id="geminiModalContent" class="relative w-full max-w-3xl mx-auto">
+        <div class="bg-white rounded-xl shadow-2xl overflow-hidden">
+            <div class="flex justify-between items-center px-6 py-4 bg-primary-600 text-white">
+                <h3 class="text-2xl font-bold flex items-center">
+                    <i class="fas fa-file-medical-alt mr-3"></i>
+                    Simplified Medical Report
+                </h3>
+                <button id="closeGeminiModal" class="text-2xl leading-none hover:text-primary-200 transition-colors duration-200">&times;</button>
             </div>
-            <div id="geminiResponseContent" class="mt-4 p-4 bg-gray-50 rounded-md overflow-auto max-h-96"><p>Loading...</p></div>
             
+            <div class="p-8 bg-gray-50" style="max-height: 70vh; overflow-y: auto;">
+                <!-- Loading state -->
+                <div id="loadingState" class="text-center py-10">
+                    <i class="fas fa-spinner fa-spin text-4xl text-primary-500"></i>
+                    <p class="mt-4 text-lg text-gray-600">Simplifying your report... Please wait.</p>
+                </div>
+
+                <!-- Error state -->
+                <div id="errorState" class="hidden text-center py-10">
+                     <i class="fas fa-exclamation-triangle text-4xl text-red-500"></i>
+                     <p id="errorMessage" class="mt-4 text-lg text-red-700 bg-red-50 p-4 rounded-md"></p>
+                </div>
+
+                <!-- Content state -->
+                <div id="contentState" class="hidden space-y-8">
+                    <!-- Summary Section -->
+                    <div class="content-item bg-white p-6 rounded-lg shadow-md border-l-4 border-primary-500">
+                        <h4 class="text-xl font-semibold text-gray-800 mb-3 flex items-center">
+                            <i class="fas fa-clipboard-list mr-3 text-primary-500"></i>
+                            Summary
+                        </h4>
+                        <p id="summaryContent" class="text-gray-700 leading-relaxed"></p>
+                    </div>
+
+                    <!-- Key Points Section -->
+                    <div id="keyPointsSection" class="content-item bg-white p-6 rounded-lg shadow-md border-l-4 border-green-500">
+                        <h4 class="text-xl font-semibold text-gray-800 mb-4 flex items-center">
+                            <i class="fas fa-check-circle mr-3 text-green-500"></i>
+                            Key Points
+                        </h4>
+                        <ul id="keyPointsList" class="space-y-3 list-inside">
+                        </ul>
+                    </div>
+
+                    <!-- Terms Explained Section -->
+                    <div id="termsExplainedSection" class="content-item bg-white p-6 rounded-lg shadow-md border-l-4 border-yellow-500">
+                        <h4 class="text-xl font-semibold text-gray-800 mb-4 flex items-center">
+                            <i class="fas fa-book-medical mr-3 text-yellow-500"></i>
+                            Medical Terms Explained
+                        </h4>
+                        <dl id="termsList" class="space-y-4">
+                        </dl>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
+</div>
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
@@ -362,18 +432,132 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Gemini Modal logic
     window.getSimplifiedReport = async function(recordId) {
-        geminiModal.style.display = 'block';
-        const contentDiv = document.getElementById('geminiResponseContent');
-        contentDiv.innerHTML = '<p>Simplifying your report... This may take a moment.</p>';
+        const geminiModal = document.getElementById('geminiModal');
+        const modalContent = document.getElementById('geminiModalContent');
+        geminiModal.classList.remove('hidden');
+        geminiModal.style.pointerEvents = 'auto';
+
+        // Get all the state divs
+        const loadingState = document.getElementById('loadingState');
+        const errorState = document.getElementById('errorState');
+        const contentState = document.getElementById('contentState');
+        const errorMessage = document.getElementById('errorMessage');
+
+        // Reset to loading state
+        loadingState.classList.remove('hidden');
+        errorState.classList.add('hidden');
+        contentState.classList.add('hidden');
+
+        // Animate modal in
+        anime({
+            targets: geminiModal,
+            backgroundColor: 'rgba(31, 41, 55, 0.6)',
+            duration: 300,
+            easing: 'easeOutQuad'
+        });
+        anime({
+            targets: modalContent,
+            translateY: ['-30px', '0px'],
+            opacity: [0, 1],
+            duration: 400,
+            easing: 'easeOutCubic'
+        });
+
         try {
             const response = await fetch(`simplify_report.php?record_id=${recordId}`);
             const data = await response.json();
-            contentDiv.innerHTML = data.status === 'success' ? data.simplified_text : `<p class="text-red-500">Error: ${data.message}</p>`;
+
+            if (data.status === 'success' && data.simplified_data) {
+                const { summary, key_points, terms_explained } = data.simplified_data;
+
+                // Populate Summary
+                document.getElementById('summaryContent').textContent = summary;
+
+                // Populate Key Points
+                const keyPointsList = document.getElementById('keyPointsList');
+                keyPointsList.innerHTML = ''; // Clear previous points
+                if (key_points && key_points.length > 0) {
+                    key_points.forEach(point => {
+                        const li = document.createElement('li');
+                        li.className = 'flex items-start';
+                        li.innerHTML = `<i class="fas fa-angle-right text-green-500 mt-1 mr-3"></i><span class="text-gray-600">${point}</span>`;
+                        keyPointsList.appendChild(li);
+                    });
+                    document.getElementById('keyPointsSection').classList.remove('hidden');
+                } else {
+                    document.getElementById('keyPointsSection').classList.add('hidden');
+                }
+
+                // Populate Terms Explained
+                const termsList = document.getElementById('termsList');
+                termsList.innerHTML = ''; // Clear previous terms
+                if (terms_explained && Object.keys(terms_explained).length > 0) {
+                    for (const term in terms_explained) {
+                        const div = document.createElement('div');
+                        div.innerHTML = `
+                            <dt class="font-semibold text-gray-700">${term}</dt>
+                            <dd class="text-gray-600 ml-4">${terms_explained[term]}</dd>
+                        `;
+                        termsList.appendChild(div);
+                    }
+                    document.getElementById('termsExplainedSection').classList.remove('hidden');
+                } else {
+                    document.getElementById('termsExplainedSection').classList.add('hidden');
+                }
+                
+                // Show content with animation
+                loadingState.classList.add('hidden');
+                contentState.classList.remove('hidden');
+                anime({
+                    targets: '.content-item',
+                    translateY: ['20px', '0px'],
+                    opacity: [0, 1],
+                    delay: anime.stagger(100),
+                    easing: 'easeOutCubic'
+                });
+
+            } else {
+                // Handle error from API
+                errorMessage.textContent = data.message || 'An unknown error occurred.';
+                loadingState.classList.add('hidden');
+                errorState.classList.remove('hidden');
+            }
         } catch (error) {
-            contentDiv.innerHTML = '<p class="text-red-500">A network or server error occurred.</p>';
+            // Handle network/fetch error
+            errorMessage.textContent = 'A network or server error occurred. Please try again later.';
+            loadingState.classList.add('hidden');
+            errorState.classList.remove('hidden');
         }
+    };
+
+    // Override close function to add animation
+    const originalCloseAllModals = window.closeAllModals;
+    window.closeAllModals = () => {
+        const geminiModal = document.getElementById('geminiModal');
+        const modalContent = document.getElementById('geminiModalContent');
+        
+        anime({
+            targets: modalContent,
+            translateY: '30px',
+            opacity: 0,
+            duration: 300,
+            easing: 'easeInCubic',
+            complete: () => {
+                geminiModal.classList.add('hidden');
+                geminiModal.style.pointerEvents = 'none';
+            }
+        });
+        anime({
+            targets: geminiModal,
+            backgroundColor: 'rgba(31, 41, 55, 0)',
+            duration: 300,
+            easing: 'easeInQuad'
+        });
     };
 });
 </script>
+
+</body>
+</html>
 </body>
 </html>

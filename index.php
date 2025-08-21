@@ -185,7 +185,7 @@
                 </div>
             </div>
             <div class="border-t border-gray-800 mt-8 pt-8 flex flex-col md:flex-row justify-between items-center">
-                <p class="text-gray-400 mb-4 md:mb-0">&copy; 2024 Health Locker. All rights reserved.</p>
+                <p class="text-gray-400 mb-4 md:mb-0">&copy; 2025 Health Locker. All rights reserved.</p>
                 <div class="flex space-x-6">
                     <a href="#" class="text-gray-400 hover:text-white transition-colors duration-200">Privacy Policy</a>
                     <a href="#" class="text-gray-400 hover:text-white transition-colors duration-200">Terms of Service</a>

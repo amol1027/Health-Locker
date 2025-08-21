@@ -93,14 +93,46 @@ try {
     // 3. Craft the prompt and send to Gemini API using the PHP client
     $client = Gemini::client($gemini_api_key);
 
-    $prompt = "You are a health assistant. Simplify the following medical report text into easy-to-understand language. Explain any technical terms and provide a concise summary. Always start the response with 'Here is a simplified summary of the report:'. Here is the text: \n\n" . $extractedText;
+    $prompt = "You are a highly skilled medical assistant. Your task is to interpret a medical report and structure the information into a clear, easy-to-understand JSON format. The report text is provided below.
 
-                $response = $client->generativeModel('gemini-2.0-flash')->generateContent(Content::parse($prompt));
+    **Instructions:**
+    1.  **Analyze the Report:** Carefully read the provided medical report text.
+    2.  **Extract Key Information:** Identify the main summary, key findings or data points, and any complex medical terms.
+    3.  **Format as JSON:** Create a JSON object with the following keys:
+        *   `summary`: A concise, easy-to-understand paragraph summarizing the report's overall findings.
+        *   `key_points`: An array of strings, where each string is a crucial point or finding from the report (e.g., 'Blood pressure: 120/80 mmHg', 'Cholesterol levels are within the normal range.').
+        *   `terms_explained`: An object where each key is a medical term found in the report and its value is a simple, clear explanation of that term.
+
+    **Medical Report Text:**
+    ```
+    " . $extractedText . "
+    ```
+
+    **IMPORTANT:** Ensure the output is ONLY the raw JSON object, without any surrounding text, explanations, or markdown formatting like ```json. The JSON should be well-formed and ready for parsing.";
+
+    $response = $client->generativeModel('gemini-1.5-flash')
+        ->generateContent(Content::parse($prompt));
 
     $simplifiedText = $response->text();
 
-    // 4. Return the response
-    echo json_encode(['status' => 'success', 'simplified_text' => nl2br(htmlspecialchars($simplifiedText))]);
+    // 4. Clean, validate, and return the response
+    // Attempt to remove markdown formatting (```json ... ```)
+    $cleanedJson = preg_replace('/^```json\s*|\s*```$/', '', $simplifiedText);
+    
+    $jsonResponse = json_decode($cleanedJson, true);
+
+    if (json_last_error() === JSON_ERROR_NONE && isset($jsonResponse['summary'])) {
+        // It's valid JSON and contains the expected keys
+        echo json_encode(['status' => 'success', 'simplified_data' => $jsonResponse]);
+    } else {
+        // It's not valid JSON, return it as plain text in a structured way
+        $fallbackData = [
+            'summary' => 'The report was simplified, but the structured data could not be generated. Here is the raw summary:',
+            'key_points' => [$simplifiedText],
+            'terms_explained' => new stdClass() // Empty object
+        ];
+        echo json_encode(['status' => 'success', 'simplified_data' => $fallbackData]);
+    }
 
 } catch (PDOException $e) {
     echo json_encode(['status' => 'error', 'message' => 'Database error: ' . $e->getMessage()]);

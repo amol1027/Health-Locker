@@ -9,18 +9,18 @@ if (!isset($_SESSION['user_id'])) {
 
 $user_id = $_SESSION['user_id'];
 $message = '';
+$message_type = ''; // 'success' or 'error'
 
-// Fetch family members to populate the dropdown
 $family_members = [];
 try {
-    $stmt = $pdo->prepare("SELECT id, first_name, last_name FROM family_members WHERE user_id = ?");
+    $stmt = $pdo->prepare("SELECT id, first_name, last_name FROM family_members WHERE user_id = ? ORDER BY first_name ASC");
     $stmt->execute([$user_id]);
     $family_members = $stmt->fetchAll(PDO::FETCH_ASSOC);
 } catch (PDOException $e) {
-    // Handle error
+    $message = "Database Error: " . $e->getMessage();
+    $message_type = 'error';
 }
 
-// Check if a specific member is pre-selected from the URL
 $selected_member_id = isset($_GET['member_id']) ? (int)$_GET['member_id'] : null;
 $member_name = '';
 
@@ -32,15 +32,14 @@ if ($selected_member_id) {
         if ($member) {
             $member_name = htmlspecialchars($member['first_name'] . ' ' . $member['last_name']);
         } else {
-            // Member not found or doesn't belong to user, redirect or show error
             header('Location: ../frontend/dashboard.php');
             exit;
         }
     } catch (PDOException $e) {
-        // Handle error
+        $message = "Database Error: " . $e->getMessage();
+        $message_type = 'error';
     }
 }
-
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $member_id = $_POST['member_id'];
@@ -48,17 +47,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $reminder_datetime = $_POST['reminder_datetime'];
 
     if (empty($member_id) || empty($reminder_text) || empty($reminder_datetime)) {
-        $message = 'Please fill in all fields.';
+        $message = 'Please fill in all required fields.';
+        $message_type = 'error';
     } else {
         try {
-            $stmt = $pdo->prepare("INSERT INTO reminders (user_id, member_id, reminder_text, reminder_datetime) VALUES (?, ?, ?, ?)");
+            $stmt = $pdo->prepare("INSERT INTO reminders (user_id, member_id, reminder_text, reminder_datetime, is_sent) VALUES (?, ?, ?, ?, 0)");
             if ($stmt->execute([$user_id, $member_id, $reminder_text, $reminder_datetime])) {
                 $message = 'Reminder set successfully!';
+                $message_type = 'success';
             } else {
                 $message = 'Something went wrong. Please try again.';
+                $message_type = 'error';
             }
         } catch (PDOException $e) {
             $message = 'Database error: ' . $e->getMessage();
+            $message_type = 'error';
         }
     }
 }
@@ -70,56 +73,111 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Add Reminder - Health Locker</title>
-    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: { 50: '#f0f9ff', 100: '#e0f2fe', 200: '#bae6fd', 300: '#7dd3fc', 400: '#38bdf8', 500: '#0ea5e9', 600: '#0284c7', 700: '#0369a1', 800: '#075985', 900: '#0c4a6e' }
+                    },
+                    fontFamily: { sans: ['Inter', 'sans-serif'] },
+                }
+            }
+        }
+    </script>
 </head>
-<body class="bg-gray-100 font-sans">
-    <nav class="bg-white shadow-lg p-4 flex justify-between items-center">
-        <h1 class="text-xl font-bold text-gray-800">Health Locker</h1>
-        <div>
-            <a href="../frontend/dashboard.php" class="text-blue-500 hover:text-blue-700 font-medium mr-4">Dashboard</a>
-            <a href="../user/logout.php" class="text-red-500 hover:text-red-700 font-medium">Log Out</a>
-        </div>
-    </nav>
-    <div class="container mx-auto mt-8 p-4 max-w-2xl">
-        <h2 class="text-3xl font-bold mb-6 text-gray-800">Add a New Reminder</h2>
-        <form action="add_reminder.php" method="POST" class="bg-white p-6 rounded-lg shadow-md">
-            <?php if (isset($message)): ?>
-                <div class="mb-4 p-3 rounded <?php echo strpos($message, 'successful') !== false ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'; ?>">
-                    <?php echo $message; ?>
+<body class="bg-gray-50 font-sans">
+    <header class="bg-white shadow-sm">
+        <div class="container mx-auto px-4 sm:px-6 lg:px-8">
+            <nav class="flex justify-between items-center py-4">
+                <a href="../frontend/dashboard.php" class="text-2xl font-bold text-primary-600">Health Locker</a>
+                <div class="flex items-center space-x-4">
+                    <a href="../frontend/dashboard.php" class="text-gray-600 hover:text-primary-600 px-3 py-2 rounded-md text-sm font-medium flex items-center"><i class="fas fa-home mr-2"></i> Dashboard</a>
+                    <a href="../user/logout.php" class="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors duration-200 font-medium">Log Out</a>
                 </div>
-            <?php endif; ?>
-            <div class="mb-4">
-                <label class="block text-gray-700 text-sm font-bold mb-2" for="member_id">Reminder for</label>
-                <?php if ($selected_member_id && $member_name): ?>
-                    <div class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 bg-gray-200 leading-tight">
-                        <?php echo $member_name; ?>
+            </nav>
+        </div>
+    </header>
+
+    <div class="container mx-auto mt-10 p-4 sm:px-6 lg:px-8">
+        <div class="max-w-3xl mx-auto">
+            <div class="flex items-center mb-8">
+                <a href="../frontend/dashboard.php" class="text-gray-500 hover:text-primary-600 mr-4">
+                    <i class="fas fa-arrow-left text-2xl"></i>
+                </a>
+                <div>
+                    <h1 class="text-3xl font-bold text-gray-800">Set a New Reminder</h1>
+                    <p class="text-gray-600 text-lg">Schedule reminders for medications or appointments.</p>
+                </div>
+            </div>
+
+            <div class="bg-white p-8 rounded-xl shadow-lg">
+                <form action="add_reminder.php<?php if ($selected_member_id) echo '?member_id=' . $selected_member_id; ?>" method="POST" class="space-y-6">
+                    <?php if (!empty($message)): ?>
+                        <div id="alert-message" class="p-4 rounded-lg flex items-start <?php echo $message_type === 'success' ? 'bg-green-50 text-green-800' : 'bg-red-50 text-red-800'; ?>">
+                            <i class="fas <?php echo $message_type === 'success' ? 'fa-check-circle' : 'fa-exclamation-triangle'; ?> mr-3 mt-1"></i>
+                            <p class="font-medium"><?php echo htmlspecialchars($message); ?></p>
+                        </div>
+                    <?php endif; ?>
+
+                    <div>
+                        <label for="member_id" class="block text-sm font-medium text-gray-700 mb-1">Reminder For</label>
+                        <?php if ($selected_member_id && $member_name): ?>
+                            <div class="w-full py-2 px-3 text-gray-800 bg-gray-100 rounded-md border border-gray-200 flex items-center">
+                                <i class="fas fa-user mr-3 text-gray-400"></i>
+                                <?php echo $member_name; ?>
+                            </div>
+                            <input type="hidden" name="member_id" value="<?php echo $selected_member_id; ?>">
+                        <?php else: ?>
+                            <select id="member_id" name="member_id" required class="w-full py-2 px-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500">
+                                <option value="">Select a family member</option>
+                                <?php foreach ($family_members as $member): ?>
+                                    <option value="<?php echo htmlspecialchars($member['id']); ?>">
+                                        <?php echo htmlspecialchars($member['first_name'] . ' ' . $member['last_name']); ?>
+                                    </option>
+                                <?php endforeach; ?>
+                            </select>
+                        <?php endif; ?>
                     </div>
-                    <input type="hidden" name="member_id" value="<?php echo $selected_member_id; ?>">
-                <?php else: ?>
-                    <select class="shadow border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" id="member_id" name="member_id" required>
-                        <option value="">Select a family member</option>
-                        <?php foreach ($family_members as $member): ?>
-                            <option value="<?php echo htmlspecialchars($member['id']); ?>">
-                                <?php echo htmlspecialchars($member['first_name'] . ' ' . $member['last_name']); ?>
-                            </option>
-                        <?php endforeach; ?>
-                    </select>
-                <?php endif; ?>
+
+                    <div>
+                        <label for="reminder_text" class="block text-sm font-medium text-gray-700 mb-1">Reminder Details</label>
+                        <textarea id="reminder_text" name="reminder_text" rows="4" placeholder="e.g., Take Paracetamol after dinner" required class="w-full py-2 px-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"></textarea>
+                    </div>
+
+                    <div>
+                        <label for="reminder_datetime" class="block text-sm font-medium text-gray-700 mb-1">Date and Time</label>
+                        <input type="datetime-local" id="reminder_datetime" name="reminder_datetime" required class="w-full py-2 px-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500">
+                    </div>
+                    
+                    <div class="flex items-center justify-end space-x-4 pt-4 border-t border-gray-200">
+                        <a href="../frontend/dashboard.php" class="px-6 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-primary-500">
+                            Cancel
+                        </a>
+                        <button type="submit" class="px-6 py-2 text-sm font-medium text-white bg-primary-600 rounded-md hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 flex items-center">
+                            <i class="fas fa-bell mr-2"></i>
+                            Set Reminder
+                        </button>
+                    </div>
+                </form>
             </div>
-            <div class="mb-4">
-                <label class="block text-gray-700 text-sm font-bold mb-2" for="reminder_text">Reminder Text</label>
-                <textarea class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" id="reminder_text" name="reminder_text" rows="3" placeholder="e.g., Take medication at 8 AM" required></textarea>
-            </div>
-            <div class="mb-6">
-                <label class="block text-gray-700 text-sm font-bold mb-2" for="reminder_datetime">Date and Time</label>
-                <input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" id="reminder_datetime" name="reminder_datetime" type="datetime-local" required>
-            </div>
-            <div class="flex items-center justify-between">
-                <button class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline" type="submit">
-                    Set Reminder
-                </button>
-            </div>
-        </form>
+        </div>
     </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const alertMessage = document.getElementById('alert-message');
+            if (alertMessage) {
+                setTimeout(() => {
+                    alertMessage.style.transition = 'opacity 0.5s ease';
+                    alertMessage.style.opacity = '0';
+                    setTimeout(() => alertMessage.remove(), 500);
+                }, 5000); // Hide after 5 seconds
+            }
+        });
+    </script>
 </body>
 </html>
