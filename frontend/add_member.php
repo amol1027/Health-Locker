@@ -80,9 +80,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <div class="container mx-auto mt-10 p-4 sm:px-6 lg:px-8">
         <div class="max-w-3xl mx-auto">
             <div class="flex items-center mb-8">
-                <a href="dashboard.php" class="text-gray-500 hover:text-primary-600 mr-4">
+                <button onclick="history.back()" class="text-gray-500 hover:text-primary-600 mr-4 flex items-center">
                     <i class="fas fa-arrow-left text-2xl"></i>
-                </a>
+                </button>
                 <div>
                     <h1 class="text-3xl font-bold text-gray-800">Add New Family Member</h1>
                     <p class="text-gray-600 text-lg">Enter the details of your new family member.</p>

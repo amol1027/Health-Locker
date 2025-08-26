@@ -209,9 +209,14 @@ try {
     <div class="container mx-auto mt-10 p-4 sm:px-6 lg:px-8">
         <div class="flex flex-col md:flex-row md:justify-between md:items-center mb-8">
             
-            <div class="mb-4 md:mb-0">
-                <h1 class="text-3xl font-bold text-gray-800">Medical Records</h1>
-                <p class="text-gray-600 text-lg">For <?php echo htmlspecialchars($member_name); ?></p>
+            <div class="flex items-center mb-4 md:mb-0">
+                <button onclick="history.back()" class="text-gray-500 hover:text-primary-600 mr-4 flex items-center">
+                    <i class="fas fa-arrow-left text-2xl"></i>
+                </button>
+                <div>
+                    <h1 class="text-3xl font-bold text-gray-800">Medical Records</h1>
+                    <p class="text-gray-600 text-lg">For <?php echo htmlspecialchars($member_name); ?></p>
+                </div>
             </div>
             
            <div class="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2">
@@ -297,6 +302,7 @@ try {
                                     <div class="ml-4 flex-shrink-0 flex space-x-3">
                                         <a href="view_file.php?record_id=<?php echo $record['id']; ?>&preview=1" target="_blank" class="px-3 py-1 bg-primary-100 text-primary-700 rounded-full text-sm font-medium hover:bg-primary-200">View File</a>
                                         <button onclick="getSimplifiedReport(<?php echo $record['id']; ?>)" class="px-3 py-1 bg-green-100 text-green-700 rounded-full text-sm font-medium hover:bg-green-200">Simplify</button>
+                                        <button onclick="confirmDelete(<?php echo $record['id']; ?>, '<?php echo htmlspecialchars($record['record_type']); ?>')" class="px-3 py-1 bg-red-100 text-red-700 rounded-full text-sm font-medium hover:bg-red-200">Delete</button>
                                     </div>
                                 </div>
                             </li>
@@ -535,29 +541,109 @@ document.addEventListener('DOMContentLoaded', function() {
     window.closeAllModals = () => {
         const geminiModal = document.getElementById('geminiModal');
         const modalContent = document.getElementById('geminiModalContent');
-        
-        anime({
-            targets: modalContent,
-            translateY: '30px',
-            opacity: 0,
-            duration: 300,
-            easing: 'easeInCubic',
-            complete: () => {
-                geminiModal.classList.add('hidden');
-                geminiModal.style.pointerEvents = 'none';
+        const deleteConfirmModal = document.getElementById('deleteConfirmModal'); // Get delete modal
+
+        // Close Gemini modal with animation
+        if (!geminiModal.classList.contains('hidden')) {
+            anime({
+                targets: modalContent,
+                translateY: '30px',
+                opacity: 0,
+                duration: 300,
+                easing: 'easeInCubic',
+                complete: () => {
+                    geminiModal.classList.add('hidden');
+                    geminiModal.style.pointerEvents = 'none';
+                }
+            });
+            anime({
+                targets: geminiModal,
+                backgroundColor: 'rgba(31, 41, 55, 0)',
+                duration: 300,
+                easing: 'easeInQuad'
+            });
+        }
+
+        // Close other modals directly
+        document.querySelectorAll('.fixed.inset-0').forEach(modal => {
+            if (modal !== geminiModal) { // Don't hide geminiModal twice
+                modal.classList.add('hidden');
             }
         });
-        anime({
-            targets: geminiModal,
-            backgroundColor: 'rgba(31, 41, 55, 0)',
-            duration: 300,
-            easing: 'easeInQuad'
-        });
     };
+
+    // Delete Confirmation Logic
+    window.confirmDelete = function(recordId, recordType) {
+        const deleteConfirmModal = document.getElementById('deleteConfirmModal');
+        const deleteRecordIdInput = document.getElementById('deleteRecordId');
+        const deleteRecordTypeSpan = document.getElementById('deleteRecordType');
+        const memberIdInput = document.getElementById('deleteMemberId');
+
+        deleteRecordIdInput.value = recordId;
+        deleteRecordTypeSpan.textContent = recordType;
+        memberIdInput.value = <?php echo json_encode($member_id); ?>; // Pass member_id to the modal
+
+        deleteConfirmModal.classList.remove('hidden');
+    };
+
+    const deleteRecordForm = document.getElementById('deleteRecordForm');
+    if (deleteRecordForm) {
+        deleteRecordForm.addEventListener('submit', async function(event) {
+            event.preventDefault();
+            const formData = new FormData(this);
+            const recordId = formData.get('record_id');
+            const memberId = formData.get('member_id');
+
+            try {
+                const response = await fetch('delete_record.php', {
+                    method: 'POST',
+                    body: formData
+                });
+                const data = await response.json();
+
+                if (data.status === 'success') {
+                    alert(data.message);
+                    window.location.href = data.redirect_url; // Redirect to refresh the list
+                } else {
+                    alert('Error: ' + data.message);
+                }
+            } catch (error) {
+                alert('An error occurred while trying to delete the record.');
+                console.error('Delete error:', error);
+            } finally {
+                closeAllModals();
+            }
+        });
+    }
 });
 </script>
 
-</body>
-</html>
+<!-- Delete Confirmation Modal -->
+<div id="deleteConfirmModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full hidden z-50 flex items-center justify-center p-4">
+    <div class="relative bg-white rounded-lg shadow-xl w-full max-w-sm">
+        <div class="flex justify-between items-center p-5 border-b">
+            <h3 class="text-xl font-semibold text-gray-800">Confirm Deletion</h3>
+            <button onclick="closeAllModals()" class="text-gray-500 hover:text-gray-700">
+                <i class="fas fa-times text-xl"></i>
+            </button>
+        </div>
+        <div class="p-5">
+            <p class="text-gray-700 mb-4">Are you sure you want to delete the record "<span id="deleteRecordType" class="font-semibold"></span>"? This action cannot be undone.</p>
+            <form id="deleteRecordForm" method="POST" action="delete_record.php">
+                <input type="hidden" name="record_id" id="deleteRecordId">
+                <input type="hidden" name="member_id" id="deleteMemberId">
+                <div class="flex justify-end space-x-3 pt-4 border-t">
+                    <button type="button" onclick="closeAllModals()" class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-primary-500">
+                        Cancel
+                    </button>
+                    <button type="submit" class="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500">
+                        Delete
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
 </body>
 </html>

@@ -123,9 +123,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <div class="container mx-auto mt-10 p-4 sm:px-6 lg:px-8">
         <div class="max-w-3xl mx-auto">
             <div class="flex items-center mb-8">
-                <a href="view_records.php?member_id=<?php echo htmlspecialchars($member_id); ?>" class="text-gray-500 hover:text-primary-600 mr-4">
+                <button onclick="history.back()" class="text-gray-500 hover:text-primary-600 mr-4 flex items-center">
                     <i class="fas fa-arrow-left text-2xl"></i>
-                </a>
+                </button>
                 <div>
                     <h1 class="text-3xl font-bold text-gray-800">Upload New Record</h1>
                     <p class="text-gray-600 text-lg">For <?php echo htmlspecialchars($member_name); ?></p>
@@ -225,8 +225,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     setTimeout(() => alertMessage.remove(), 500);
                 }, 5000); // Hide after 5 seconds
             }
-
-            fileDropArea.addEventListener('click', () => fileInput.click());
 
             fileInput.addEventListener('change', () => {
                 if (fileInput.files.length > 0) {
