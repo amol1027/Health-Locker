@@ -79,13 +79,16 @@ try {
                                 <p class="text-gray-600 mb-1"><i class="fas fa-user-friends fa-fw mr-2 text-gray-400"></i><span class="font-medium">Relation:</span> <?= htmlspecialchars($member['relation']) ?></p>
                                 <p class="text-gray-600 mb-4"><i class="fas fa-birthday-cake fa-fw mr-2 text-gray-400"></i><span class="font-medium">D.O.B:</span> <?= htmlspecialchars(date("M d, Y", strtotime($member['date_of_birth']))) ?></p>
                             </div>
-                            <div class="flex space-x-3 mt-4">
-                                <a href="view_records.php?member_id=<?= $member['id'] ?>" class="flex-1 text-center px-4 py-2 bg-primary-500 text-white rounded-lg hover:bg-primary-600 transition-colors duration-200 text-sm font-medium flex items-center justify-center">
-                                    <i class="fas fa-file-medical-alt mr-2"></i> View Records
+                            <div class="flex flex-wrap justify-center gap-2 mt-4">
+                                <a href="view_records.php?member_id=<?= $member['id'] ?>" class="flex-1 text-center px-3 py-1.5 bg-primary-500 text-white rounded-lg hover:bg-primary-600 transition-colors duration-200 text-xs font-medium flex items-center justify-center min-w-[120px]">
+                                    <i class="fas fa-file-medical-alt mr-1"></i> Records
                                 </a>
-                                <a href="../remainders/add_reminder.php?member_id=<?= $member['id'] ?>" class="flex-1 text-center px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors duration-200 text-sm font-medium flex items-center justify-center">
-                                    <i class="fas fa-bell mr-2"></i> Set Reminder
+                                <a href="../remainders/add_reminder.php?member_id=<?= $member['id'] ?>" class="flex-1 text-center px-3 py-1.5 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors duration-200 text-xs font-medium flex items-center justify-center min-w-[120px]">
+                                    <i class="fas fa-bell mr-1"></i> Reminder
                                 </a>
+                                <button onclick="confirmDelete(<?= $member['id'] ?>, '<?= htmlspecialchars($member['first_name'] . ' ' . $member['last_name']) ?>')" class="flex-1 text-center px-3 py-1.5 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors duration-200 text-xs font-medium flex items-center justify-center min-w-[120px]">
+                                    <i class="fas fa-trash-alt mr-1"></i> Delete
+                                </button>
                             </div>
                         </div>
                     <?php endforeach; ?>
@@ -101,6 +104,23 @@ try {
     </div>
 
     <script>
+        function confirmDelete(memberId, memberName) {
+            if (confirm(`Are you sure you want to delete ${memberName} and all their associated health records and reminders? This action cannot be undone.`)) {
+                const form = document.createElement('form');
+                form.method = 'POST';
+                form.action = 'delete_member.php';
+
+                const input = document.createElement('input');
+                input.type = 'hidden';
+                input.name = 'member_id';
+                input.value = memberId;
+                form.appendChild(input);
+
+                document.body.appendChild(form);
+                form.submit();
+            }
+        }
+
         document.addEventListener('DOMContentLoaded', function() {
             anime({
                 targets: '.family-member-card',
@@ -110,6 +130,29 @@ try {
                 easing: 'easeOutCubic',
                 duration: 600
             });
+
+            // Display delete message if present
+            <?php if (isset($_SESSION['delete_message'])): ?>
+                const message = "<?= htmlspecialchars($_SESSION['delete_message']) ?>";
+                const messageType = "<?= htmlspecialchars($_SESSION['delete_message_type']) ?>";
+                
+                const alertDiv = document.createElement('div');
+                alertDiv.id = 'alert-message';
+                alertDiv.className = `fixed top-5 right-5 p-4 rounded-lg shadow-lg flex items-start z-50 ${messageType === 'success' ? 'bg-green-500 text-white' : 'bg-red-500 text-white'}`;
+                alertDiv.innerHTML = `<i class="fas ${messageType === 'success' ? 'fa-check-circle' : 'fa-exclamation-triangle'} mr-3 mt-1"></i><p class="font-medium">${message}</p>`;
+                document.body.appendChild(alertDiv);
+
+                setTimeout(() => {
+                    alertDiv.style.transition = 'opacity 0.5s ease';
+                    alertDiv.style.opacity = '0';
+                    setTimeout(() => alertDiv.remove(), 500);
+                }, 5000); // Hide after 5 seconds
+
+                <?php
+                unset($_SESSION['delete_message']);
+                unset($_SESSION['delete_message_type']);
+                ?>
+            <?php endif; ?>
         });
     </script>
 </body>

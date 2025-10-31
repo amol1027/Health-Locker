@@ -236,6 +236,13 @@ try {
     <a href="../remainders/add_reminder.php?member_id=<?php echo htmlspecialchars($member_id); ?>" class="bg-green-600 text-white px-4 py-2 rounded-lg shadow-sm text-sm font-medium hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 flex items-center justify-center">
         <i class="fas fa-bell mr-2"></i> Set Reminder
     </a>
+    <div class="relative inline-block text-left">
+        <select id="globalLanguageSelector" class="block w-full px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500">
+            <option value="en">English</option>
+            <option value="mr">Marathi</option>
+            <option value="hi">Hindi</option>
+        </select>
+    </div>
 </div>
         </div>
 <!-- After the heading section -->
@@ -299,9 +306,25 @@ try {
                                             </div>
                                         </div>
                                     </div>
-                                    <div class="ml-4 flex-shrink-0 flex space-x-3">
+                                    <div class="ml-4 flex-shrink-0 flex space-x-3 items-center">
                                         <a href="view_file.php?record_id=<?php echo $record['id']; ?>&preview=1" target="_blank" class="px-3 py-1 bg-primary-100 text-primary-700 rounded-full text-sm font-medium hover:bg-primary-200">View File</a>
-                                        <button onclick="getSimplifiedReport(<?php echo $record['id']; ?>)" class="px-3 py-1 bg-green-100 text-green-700 rounded-full text-sm font-medium hover:bg-green-200">Simplify</button>
+                                        
+                                        <div class="relative inline-block text-left">
+                                        <div class="relative inline-block text-left">
+                                            <div class="relative">
+                                                <button id="simplifyBtn_<?php echo $record['id']; ?>" class="px-3 py-1 bg-primary-600 text-white rounded-full text-sm font-medium hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-opacity-50 flex items-center justify-center" onclick="toggleLanguageDropdown(<?php echo $record['id']; ?>, event)">
+                                                    Simplify <i class="fas fa-caret-down ml-1"></i>
+                                                </button>
+                                                <div id="languageDropdown_<?php echo $record['id']; ?>" class="origin-top-right absolute left-0 mt-2 w-32 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 focus:outline-none z-50 hidden" role="menu" aria-orientation="vertical" aria-labelledby="simplifyBtn_<?php echo $record['id']; ?>">
+                                                <div class="py-1" role="none">
+                                                    <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-primary-100 hover:text-primary-900 transition-colors duration-150 ease-in-out" role="menuitem" data-lang="en" onclick="selectLanguageAndSimplify(<?php echo $record['id']; ?>, 'en', event)">English</a>
+                                                    <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-primary-100 hover:text-primary-900 transition-colors duration-150 ease-in-out" role="menuitem" data-lang="mr" onclick="selectLanguageAndSimplify(<?php echo $record['id']; ?>, 'mr', event)">Marathi</a>
+                                                    <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-primary-100 hover:text-primary-900 transition-colors duration-150 ease-in-out" role="menuitem" data-lang="hi" onclick="selectLanguageAndSimplify(<?php echo $record['id']; ?>, 'hi', event)">Hindi</a>
+                                                </div>
+                                                </div>
+                                            </div>
+                                        </div>
+
                                         <button onclick="confirmDelete(<?php echo $record['id']; ?>, '<?php echo htmlspecialchars($record['record_type']); ?>')" class="px-3 py-1 bg-red-100 text-red-700 rounded-full text-sm font-medium hover:bg-red-200">Delete</button>
                                     </div>
                                 </div>
@@ -340,7 +363,7 @@ try {
             <div class="flex justify-between items-center px-6 py-4 bg-primary-600 text-white">
                 <h3 class="text-2xl font-bold flex items-center">
                     <i class="fas fa-file-medical-alt mr-3"></i>
-                    Simplified Medical Report
+                    <span id="modalTitleText">Simplified Medical Report</span>
                 </h3>
                 <button id="closeGeminiModal" class="text-2xl leading-none hover:text-primary-200 transition-colors duration-200">&times;</button>
             </div>
@@ -349,7 +372,7 @@ try {
                 <!-- Loading state -->
                 <div id="loadingState" class="text-center py-10">
                     <i class="fas fa-spinner fa-spin text-4xl text-primary-500"></i>
-                    <p class="mt-4 text-lg text-gray-600">Simplifying your report... Please wait.</p>
+                    <p id="loadingText" class="mt-4 text-lg text-gray-600">Simplifying your report... Please wait.</p>
                 </div>
 
                 <!-- Error state -->
@@ -364,7 +387,7 @@ try {
                     <div class="content-item bg-white p-6 rounded-lg shadow-md border-l-4 border-primary-500">
                         <h4 class="text-xl font-semibold text-gray-800 mb-3 flex items-center">
                             <i class="fas fa-clipboard-list mr-3 text-primary-500"></i>
-                            Summary
+                            <span id="summaryLabel">Summary</span>
                         </h4>
                         <p id="summaryContent" class="text-gray-700 leading-relaxed"></p>
                     </div>
@@ -373,7 +396,7 @@ try {
                     <div id="keyPointsSection" class="content-item bg-white p-6 rounded-lg shadow-md border-l-4 border-green-500">
                         <h4 class="text-xl font-semibold text-gray-800 mb-4 flex items-center">
                             <i class="fas fa-check-circle mr-3 text-green-500"></i>
-                            Key Points
+                            <span id="keyPointsLabel">Key Points</span>
                         </h4>
                         <ul id="keyPointsList" class="space-y-3 list-inside">
                         </ul>
@@ -383,7 +406,7 @@ try {
                     <div id="termsExplainedSection" class="content-item bg-white p-6 rounded-lg shadow-md border-l-4 border-yellow-500">
                         <h4 class="text-xl font-semibold text-gray-800 mb-4 flex items-center">
                             <i class="fas fa-book-medical mr-3 text-yellow-500"></i>
-                            Medical Terms Explained
+                            <span id="termsExplainedLabel">Medical Terms Explained</span>
                         </h4>
                         <dl id="termsList" class="space-y-4">
                         </dl>
@@ -436,12 +459,91 @@ document.addEventListener('DOMContentLoaded', function() {
         document.getElementById('end_date').value = '';
     });
 
+    // Language dropdown logic
+    window.toggleLanguageDropdown = function(recordId, event) {
+        event.stopPropagation(); // Prevent the document click listener from closing it immediately
+        const dropdown = document.getElementById(`languageDropdown_${recordId}`);
+        dropdown.classList.toggle('hidden');
+        // Close other dropdowns
+        document.querySelectorAll('[id^="languageDropdown_"]').forEach(otherDropdown => {
+            if (otherDropdown.id !== dropdown.id) {
+                otherDropdown.classList.add('hidden');
+            }
+        });
+    };
+
+    // Close dropdowns when clicking outside
+    document.addEventListener('click', function(event) {
+        document.querySelectorAll('[id^="languageDropdown_"]').forEach(dropdown => {
+            if (!dropdown.contains(event.target) && !event.target.matches('[id^="simplifyBtn_"]')) {
+                dropdown.classList.add('hidden');
+            }
+        });
+    });
+
+    // Translations for UI labels
+    const translations = {
+        en: {
+            modalTitle: 'Simplified Medical Report',
+            loading: 'Simplifying your report... Please wait.',
+            error: 'Error',
+            summary: 'Summary',
+            keyPoints: 'Key Points',
+            termsExplained: 'Medical Terms Explained'
+        },
+        mr: {
+            modalTitle: 'सरलीकृत वैद्यकीय अहवाल',
+            loading: 'तुमचा अहवाल सरल करत आहे... कृपया प्रतीक्षा करा.',
+            error: 'त्रुटी',
+            summary: 'सारांश',
+            keyPoints: 'मुख्य मुद्दे',
+            termsExplained: 'वैद्यकीय संज्ञा स्पष्टीकरण'
+        },
+        hi: {
+            modalTitle: 'सरलीकृत चिकित्सा रिपोर्ट',
+            loading: 'आपकी रिपोर्ट को सरल बना रहे हैं... कृपया प्रतीक्षा करें।',
+            error: 'त्रुटि',
+            summary: 'सारांश',
+            keyPoints: 'मुख्य बिंदु',
+            termsExplained: 'चिकित्सा शब्दों की व्याख्या'
+        }
+    };
+
+    // New function to handle language selection and then simplify
+    window.selectLanguageAndSimplify = function(recordId, language, event) {
+        event.preventDefault(); // Prevent default link behavior
+        event.stopPropagation(); // Stop propagation to prevent immediate closing by document click
+
+        // Close the dropdown immediately
+        const dropdown = document.getElementById(`languageDropdown_${recordId}`);
+        if (dropdown) {
+            dropdown.classList.add('hidden');
+        }
+        
+        // Then call the main simplification function
+        getSimplifiedReport(recordId, language);
+    };
+
     // Gemini Modal logic
-    window.getSimplifiedReport = async function(recordId) {
+    window.getSimplifiedReport = async function(recordId, languageFromDropdown) {
         const geminiModal = document.getElementById('geminiModal');
         const modalContent = document.getElementById('geminiModalContent');
         geminiModal.classList.remove('hidden');
-        geminiModal.style.pointerEvents = 'auto';
+        geminiModal.style.pointerEvents = 'auto'; // Enable pointer events for the modal background
+
+        // Determine the language: prioritize dropdown selection, then global selector, then default to English
+        const globalLanguageSelector = document.getElementById('globalLanguageSelector');
+        const selectedLanguage = languageFromDropdown || (globalLanguageSelector ? globalLanguageSelector.value : 'en');
+        
+        const language = selectedLanguage;
+
+        // Update UI labels based on selected language
+        const labels = translations[language] || translations['en'];
+        document.getElementById('modalTitleText').textContent = labels.modalTitle;
+        document.getElementById('loadingText').textContent = labels.loading;
+        document.getElementById('summaryLabel').textContent = labels.summary;
+        document.getElementById('keyPointsLabel').textContent = labels.keyPoints;
+        document.getElementById('termsExplainedLabel').textContent = labels.termsExplained;
 
         // Get all the state divs
         const loadingState = document.getElementById('loadingState');
@@ -470,7 +572,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
 
         try {
-            const response = await fetch(`simplify_report.php?record_id=${recordId}`);
+            const response = await fetch(`simplify_report.php?record_id=${recordId}&language=${language}`);
             const data = await response.json();
 
             if (data.status === 'success' && data.simplified_data) {

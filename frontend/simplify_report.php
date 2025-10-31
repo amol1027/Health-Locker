@@ -21,6 +21,18 @@ if (!isset($_GET['record_id'])) {
     exit;
 }
 
+// Get language preference, default to English
+$language = isset($_GET['language']) ? strtolower($_GET['language']) : 'en';
+
+// Define language names for the prompt
+$languageNames = [
+    'en' => 'English',
+    'mr' => 'Marathi',
+    'hi' => 'Hindi',
+];
+
+$targetLanguage = $languageNames[$language] ?? $languageNames['en']; // Fallback to English if language not supported
+
 $gemini_api_key = GEMINI_API_KEY;
 
 
@@ -66,8 +78,17 @@ try {
             exit;
         }
     } elseif (in_array($fileExt, ['jpg', 'jpeg', 'png'])) {
+        // Use Tesseract for images with multi-language support
+        // Determine Tesseract language parameter based on target language
+        $tesseractLang = 'eng'; // Default to English
+        if ($language === 'mr') {
+            $tesseractLang = 'eng+mar'; // Marathi + English for better recognition
+        } elseif ($language === 'hi') {
+            $tesseractLang = 'eng+hin'; // Hindi + English for better recognition
+        }
+        
         // Use Tesseract for images. Redirect stderr to stdout to capture errors.
-        $command = "tesseract " . escapeshellarg($filePath) . " stdout 2>&1";
+        $command = "tesseract " . escapeshellarg($filePath) . " stdout -l " . $tesseractLang . " 2>&1";
         $commandOutput = shell_exec($command);
 
         // Check for Tesseract command execution failure or empty output.
@@ -93,24 +114,32 @@ try {
     // 3. Craft the prompt and send to Gemini API using the PHP client
     $client = Gemini::client($gemini_api_key);
 
-    $prompt = "You are a highly skilled medical assistant. Your task is to interpret a medical report and structure the information into a clear, easy-to-understand JSON format. The report text is provided below.
+    // Add language-specific instructions
+    $languageInstruction = "";
+    if ($language === 'mr') {
+        $languageInstruction = " Use proper Devanagari script for Marathi. Ensure medical terms are explained in simple, everyday Marathi language that is easy to understand.";
+    } elseif ($language === 'hi') {
+        $languageInstruction = " Use proper Devanagari script for Hindi. Ensure medical terms are explained in simple, everyday Hindi language that is easy to understand.";
+    }
+
+    $prompt = "You are a highly skilled medical assistant. Your task is to interpret a medical report and structure the information into a clear, easy-to-understand JSON format. The report text is provided below. The output should be in " . $targetLanguage . "." . $languageInstruction . "
 
     **Instructions:**
     1.  **Analyze the Report:** Carefully read the provided medical report text.
     2.  **Extract Key Information:** Identify the main summary, key findings or data points, and any complex medical terms.
     3.  **Format as JSON:** Create a JSON object with the following keys:
-        *   `summary`: A concise, easy-to-understand paragraph summarizing the report's overall findings.
-        *   `key_points`: An array of strings, where each string is a crucial point or finding from the report (e.g., 'Blood pressure: 120/80 mmHg', 'Cholesterol levels are within the normal range.').
-        *   `terms_explained`: An object where each key is a medical term found in the report and its value is a simple, clear explanation of that term.
+        *   `summary`: A concise, easy-to-understand paragraph summarizing the report's overall findings in " . $targetLanguage . ". Use simple language that a non-medical person can understand.
+        *   `key_points`: An array of strings, where each string is a crucial point or finding from the report, translated into " . $targetLanguage . " (e.g., 'Blood pressure: 120/80 mmHg', 'Cholesterol levels are within the normal range.'). Keep technical values but explain their significance.
+        *   `terms_explained`: An object where each key is a medical term found in the report (in " . $targetLanguage . ") and its value is a simple, clear explanation of that term in " . $targetLanguage . ". Explain terms as if talking to someone without medical knowledge.
 
     **Medical Report Text:**
     ```
     " . $extractedText . "
     ```
 
-    **IMPORTANT:** Ensure the output is ONLY the raw JSON object, without any surrounding text, explanations, or markdown formatting like ```json. The JSON should be well-formed and ready for parsing.";
+    **IMPORTANT:** Ensure the output is ONLY the raw JSON object, without any surrounding text, explanations, or markdown formatting like ```json. The JSON should be well-formed and ready for parsing. All text content inside the JSON must be in " . $targetLanguage . ".";
 
-    $response = $client->generativeModel('gemini-1.5-flash')
+    $response = $client->generativeModel('gemini-2.0-flash')
         ->generateContent(Content::parse($prompt));
 
     $simplifiedText = $response->text();
