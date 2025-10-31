@@ -1,7 +1,7 @@
 <?php
 
 // Database configuration for your local environment
-$host = 'localhost'; 
+$host = 'localhost:3307'; 
 $dbname = 'health_sys'; // The name of the database you created
 $username = 'root'; // Your database username
 $password = ''; 
@@ -17,6 +17,9 @@ try {
 // If the connection fails, terminate the script and display the error
     die("ERROR: Could not connect. " . $e->getMessage());
 }
+
+// Define the root path of the application
+define('ROOT_PATH', dirname(__DIR__));
 
 // SMTP configuration
 define('SMTP_HOST', 'smtp.gmail.com');

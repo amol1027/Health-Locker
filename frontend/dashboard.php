@@ -2,27 +2,23 @@
 session_start();
 require_once '../config/config.php';
 
-// Check if the user is logged in. If not, redirect them to the login page.
 if (!isset($_SESSION['user_id'])) {
-    header('Location: login.php');
+    header('Location: ../user/login.php');
     exit;
 }
 
 $user_id = $_SESSION['user_id'];
+$user_name = $_SESSION['user_name'] ?? 'User'; // Fallback to 'User' if name is not set
 $family_members = [];
 
 try {
-    // Fetch all family members for the logged-in user
-    $stmt = $pdo->prepare("SELECT * FROM family_members WHERE user_id = ? ORDER BY first_name ASC");
+    $stmt = $pdo->prepare("SELECT id, first_name, last_name, relation, date_of_birth FROM family_members WHERE user_id = ? ORDER BY first_name ASC");
     $stmt->execute([$user_id]);
     $family_members = $stmt->fetchAll(PDO::FETCH_ASSOC);
 } catch (PDOException $e) {
-    // Handle database error
-    // In a real application, you might log this error and show a user-friendly message
-    // For now, we'll just show an error message
-    echo "Error fetching family members: " . $e->getMessage();
+    // In a real app, log this error and show a user-friendly message.
+    die("Error fetching family members: " . $e->getMessage());
 }
-
 ?>
 
 <!DOCTYPE html>
@@ -31,39 +27,133 @@ try {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard - Health Locker</title>
-    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: { 50: '#f0f9ff', 100: '#e0f2fe', 200: '#bae6fd', 300: '#7dd3fc', 400: '#38bdf8', 500: '#0ea5e9', 600: '#0284c7', 700: '#0369a1', 800: '#075985', 900: '#0c4a6e' }
+                    },
+                    fontFamily: { sans: ['Inter', 'sans-serif'] },
+                }
+            }
+        }
+    </script>
 </head>
-<body class="bg-gray-100 font-sans">
-    <nav class="bg-white shadow-lg p-4 flex justify-between items-center">
-        <h1 class="text-xl font-bold text-gray-800">Health Locker</h1>
-        <a href="../user/logout.php" class="text-red-500 hover:text-red-700 font-medium">Log Out</a>
-    </nav>
-    <div class="container mx-auto mt-8 p-4">
-        <h2 class="text-3xl font-bold mb-6 text-gray-800">Welcome to your Personal Health Locker</h2>
-        <div class="bg-white p-6 rounded-lg shadow-md mb-6">
-            <h3 class="text-2xl font-semibold mb-4 text-gray-700">My Family</h3>
-            <div id="family-members-list" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                <?php
-                    // This section will be populated by the PHP script
-                    if (isset($family_members) && !empty($family_members)) {
-                        foreach ($family_members as $member) {
-                            echo '<div class="bg-blue-50 p-4 rounded-lg shadow-sm">';
-                            echo '<h4 class="text-lg font-bold text-blue-800">' . htmlspecialchars($member['first_name'] . ' ' . $member['last_name']) . '</h4>';
-                            echo '<p class="text-sm text-gray-600">Relation: ' . htmlspecialchars($member['relation']) . '</p>';
-                            echo '<p class="text-sm text-gray-600">D.O.B: ' . htmlspecialchars($member['date_of_birth']) . '</p>';
-                            echo '<div class="mt-4">';
-                            echo '<a href="view_records.php?member_id=' . $member['id'] . '" class="mr-2 inline-block bg-blue-500 text-white text-sm px-4 py-2 rounded hover:bg-blue-600">View Records</a>';
-                            echo '<a href="../remainders/add_reminder.php?member_id=' . $member['id'] . '" class="inline-block bg-green-500 text-white text-sm px-4 py-2 rounded hover:bg-green-600">Set Reminder</a>';
-                            echo '</div>';
-                            echo '</div>';
-                        }
-                    } else {
-                        echo '<p class="text-gray-500">You haven\'t added any family members yet.</p>';
-                    }
-                ?>
+<body class="bg-gray-50 font-sans">
+    <header class="bg-white shadow-sm">
+        <div class="container mx-auto px-4 sm:px-6 lg:px-8">
+            <nav class="flex justify-between items-center py-4">
+                <a href="dashboard.php" class="text-2xl font-bold text-primary-600">Health Locker</a>
+                <div class="flex items-center space-x-4">
+                    <a href="dashboard.php" class="text-gray-600 hover:text-primary-600 px-3 py-2 rounded-md text-sm font-medium flex items-center"><i class="fas fa-home mr-2"></i> Dashboard</a>
+                    <a href="../user/logout.php" class="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors duration-200 font-medium">Log Out</a>
+                </div>
+            </nav>
+        </div>
+    </header>
+
+    <div class="container mx-auto mt-10 p-4 sm:px-6 lg:px-8">
+        <div class="flex flex-col md:flex-row md:justify-between md:items-center mb-8">
+            <div class="mb-4 md:mb-0">
+                <h1 class="text-3xl font-bold text-gray-800">Welcome Back, <?php echo $user_name?>!</h1>
+                <p class="text-gray-600 text-lg">Manage your family's health records in one place.</p>
             </div>
-            <a href="add_member.php" class="mt-6 inline-block bg-green-500 text-white font-bold py-2 px-4 rounded hover:bg-green-600">Add New Family Member</a>
+            <a href="add_member.php" class="bg-primary-600 text-white px-5 py-2.5 rounded-lg hover:bg-primary-700 transition-all duration-300 font-medium shadow-md hover:shadow-lg flex items-center">
+                <i class="fas fa-plus mr-2"></i> Add Family Member
+            </a>
+        </div>
+
+        <div class="bg-white p-6 sm:p-8 rounded-xl shadow-lg">
+            <h3 class="text-2xl font-semibold text-gray-800 border-b pb-4 mb-6">My Family Members</h3>
+            <div id="family-members-list" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <?php if (!empty($family_members)): ?>
+                    <?php foreach ($family_members as $member): ?>
+                        <div class="family-member-card bg-white p-6 rounded-xl shadow-md hover:shadow-xl hover:-translate-y-1 transition-all duration-300 border border-gray-100 flex flex-col">
+                            <div class="flex-grow">
+                                <h4 class="text-xl font-bold text-primary-700 mb-2"><?= htmlspecialchars($member['first_name'] . ' ' . $member['last_name']) ?></h4>
+                                <p class="text-gray-600 mb-1"><i class="fas fa-user-friends fa-fw mr-2 text-gray-400"></i><span class="font-medium">Relation:</span> <?= htmlspecialchars($member['relation']) ?></p>
+                                <p class="text-gray-600 mb-4"><i class="fas fa-birthday-cake fa-fw mr-2 text-gray-400"></i><span class="font-medium">D.O.B:</span> <?= htmlspecialchars(date("M d, Y", strtotime($member['date_of_birth']))) ?></p>
+                            </div>
+                            <div class="flex flex-wrap justify-center gap-2 mt-4">
+                                <a href="view_records.php?member_id=<?= $member['id'] ?>" class="flex-1 text-center px-3 py-1.5 bg-primary-500 text-white rounded-lg hover:bg-primary-600 transition-colors duration-200 text-xs font-medium flex items-center justify-center min-w-[120px]">
+                                    <i class="fas fa-file-medical-alt mr-1"></i> Records
+                                </a>
+                                <a href="../remainders/add_reminder.php?member_id=<?= $member['id'] ?>" class="flex-1 text-center px-3 py-1.5 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors duration-200 text-xs font-medium flex items-center justify-center min-w-[120px]">
+                                    <i class="fas fa-bell mr-1"></i> Reminder
+                                </a>
+                                <button onclick="confirmDelete(<?= $member['id'] ?>, '<?= htmlspecialchars($member['first_name'] . ' ' . $member['last_name']) ?>')" class="flex-1 text-center px-3 py-1.5 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors duration-200 text-xs font-medium flex items-center justify-center min-w-[120px]">
+                                    <i class="fas fa-trash-alt mr-1"></i> Delete
+                                </button>
+                            </div>
+                        </div>
+                    <?php endforeach; ?>
+                <?php else: ?>
+                    <div class="col-span-full text-center py-16 px-6 bg-gray-50 rounded-lg">
+                        <i class="fas fa-users text-6xl text-gray-300 mb-5"></i>
+                        <h3 class="text-xl font-semibold text-gray-800">No Family Members Yet</h3>
+                        <p class="text-gray-500 mt-2 max-w-md mx-auto">Click the "Add Family Member" button to get started and keep track of your loved ones' health records.</p>
+                    </div>
+                <?php endif; ?>
+            </div>
         </div>
     </div>
+
+    <script>
+        function confirmDelete(memberId, memberName) {
+            if (confirm(`Are you sure you want to delete ${memberName} and all their associated health records and reminders? This action cannot be undone.`)) {
+                const form = document.createElement('form');
+                form.method = 'POST';
+                form.action = 'delete_member.php';
+
+                const input = document.createElement('input');
+                input.type = 'hidden';
+                input.name = 'member_id';
+                input.value = memberId;
+                form.appendChild(input);
+
+                document.body.appendChild(form);
+                form.submit();
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            anime({
+                targets: '.family-member-card',
+                translateY: [20, 0],
+                opacity: [0, 1],
+                delay: anime.stagger(100),
+                easing: 'easeOutCubic',
+                duration: 600
+            });
+
+            // Display delete message if present
+            <?php if (isset($_SESSION['delete_message'])): ?>
+                const message = "<?= htmlspecialchars($_SESSION['delete_message']) ?>";
+                const messageType = "<?= htmlspecialchars($_SESSION['delete_message_type']) ?>";
+                
+                const alertDiv = document.createElement('div');
+                alertDiv.id = 'alert-message';
+                alertDiv.className = `fixed top-5 right-5 p-4 rounded-lg shadow-lg flex items-start z-50 ${messageType === 'success' ? 'bg-green-500 text-white' : 'bg-red-500 text-white'}`;
+                alertDiv.innerHTML = `<i class="fas ${messageType === 'success' ? 'fa-check-circle' : 'fa-exclamation-triangle'} mr-3 mt-1"></i><p class="font-medium">${message}</p>`;
+                document.body.appendChild(alertDiv);
+
+                setTimeout(() => {
+                    alertDiv.style.transition = 'opacity 0.5s ease';
+                    alertDiv.style.opacity = '0';
+                    setTimeout(() => alertDiv.remove(), 500);
+                }, 5000); // Hide after 5 seconds
+
+                <?php
+                unset($_SESSION['delete_message']);
+                unset($_SESSION['delete_message_type']);
+                ?>
+            <?php endif; ?>
+        });
+    </script>
 </body>
 </html>

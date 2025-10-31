@@ -52,6 +52,12 @@
                     <a href="#features" class="text-gray-600 hover:text-primary-600 transition-colors duration-200 font-medium">Features</a>
                     <a href="#about" class="text-gray-600 hover:text-primary-600 transition-colors duration-200 font-medium">About</a>
                     <a href="#contact" class="text-gray-600 hover:text-primary-600 transition-colors duration-200 font-medium">Contact</a>
+                    <a href="admin/login.php" class="text-gray-500 hover:text-gray-700 transition-colors duration-200 text-sm flex items-center" title="Admin Login">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                        </svg>
+                        Admin
+                    </a>
                     <a href="user/login.php" class="px-4 py-2 border border-primary-600 text-primary-600 rounded-lg hover:bg-primary-50 transition-colors duration-200 font-medium">Login</a>
                     <a href="user/register.php" class="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors duration-200 font-medium">Sign Up</a>
                 </div>
@@ -185,7 +191,7 @@
                 </div>
             </div>
             <div class="border-t border-gray-800 mt-8 pt-8 flex flex-col md:flex-row justify-between items-center">
-                <p class="text-gray-400 mb-4 md:mb-0">&copy; 2024 Health Locker. All rights reserved.</p>
+                <p class="text-gray-400 mb-4 md:mb-0">&copy; 2025 Health Locker. All rights reserved.</p>
                 <div class="flex space-x-6">
                     <a href="#" class="text-gray-400 hover:text-white transition-colors duration-200">Privacy Policy</a>
                     <a href="#" class="text-gray-400 hover:text-white transition-colors duration-200">Terms of Service</a>
@@ -210,6 +216,14 @@
                 <a href="#features" class="text-gray-700 hover:text-primary-600 text-lg font-medium">Features</a>
                 <a href="#about" class="text-gray-700 hover:text-primary-600 text-lg font-medium">About</a>
                 <a href="#contact" class="text-gray-700 hover:text-primary-600 text-lg font-medium">Contact</a>
+                <div class="pt-4 border-t border-gray-200 mt-4">
+                    <a href="admin/login.php" class="flex items-center text-gray-500 hover:text-gray-700 text-sm py-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                        </svg>
+                        Administrator Login
+                    </a>
+                </div>
                 <div class="pt-4 space-y-4">
                     <a href="user/login.php" class="block w-full px-4 py-3 border border-primary-600 text-primary-600 rounded-lg text-center font-medium">Login</a>
                     <a href="user/register.php" class="block w-full px-4 py-3 bg-primary-600 text-white rounded-lg text-center font-medium">Sign Up</a>
