@@ -56,6 +56,29 @@ try {
         exit;
     }
 
+    // Check if we have a cached simplified version for this language
+    $cacheStmt = $pdo->prepare("
+        SELECT simplified_data, simplified_at 
+        FROM medical_records 
+        WHERE id = ? AND simplified_language = ?
+    ");
+    $cacheStmt->execute([$record_id, $language]);
+    $cachedRow = $cacheStmt->fetch(PDO::FETCH_ASSOC);
+    
+    if ($cachedRow && $cachedRow['simplified_data']) {
+        // Return cached data (cache is permanent unless explicitly regenerated)
+        $jsonResponse = json_decode($cachedRow['simplified_data'], true);
+        if (json_last_error() === JSON_ERROR_NONE) {
+            echo json_encode([
+                'status' => 'success', 
+                'simplified_data' => $jsonResponse, 
+                'cached' => true,
+                'cached_at' => $cachedRow['simplified_at']
+            ]);
+            exit;
+        }
+    }
+
     // The file path from the DB is like '../uploads/health_records/...' which is relative to the frontend dir.
     $filePath = realpath(__DIR__ . '/' . $record['file_path']);
 
@@ -139,10 +162,39 @@ try {
 
     **IMPORTANT:** Ensure the output is ONLY the raw JSON object, without any surrounding text, explanations, or markdown formatting like ```json. The JSON should be well-formed and ready for parsing. All text content inside the JSON must be in " . $targetLanguage . ".";
 
-    $response = $client->generativeModel('gemini-2.0-flash')
-        ->generateContent(Content::parse($prompt));
-
-    $simplifiedText = $response->text();
+    // Use the exact same API format as the working curl command
+    $apiUrl = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent";
+    
+    $postData = json_encode([
+        'contents' => [
+            [
+                'parts' => [
+                    ['text' => $prompt]
+                ]
+            ]
+        ]
+    ]);
+    
+    $ch = curl_init($apiUrl);
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+    curl_setopt($ch, CURLOPT_POST, true);
+    curl_setopt($ch, CURLOPT_POSTFIELDS, $postData);
+    curl_setopt($ch, CURLOPT_HTTPHEADER, [
+        'Content-Type: application/json',
+        'x-goog-api-key: ' . $gemini_api_key
+    ]);
+    
+    $apiResponse = curl_exec($ch);
+    $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    curl_close($ch);
+    
+    if ($httpCode !== 200) {
+        $errorData = json_decode($apiResponse, true);
+        throw new Exception($errorData['error']['message'] ?? 'API request failed with code ' . $httpCode);
+    }
+    
+    $responseData = json_decode($apiResponse, true);
+    $simplifiedText = $responseData['candidates'][0]['content']['parts'][0]['text'] ?? '';
 
     // 4. Clean, validate, and return the response
     // Attempt to remove markdown formatting (```json ... ```)
@@ -152,7 +204,15 @@ try {
 
     if (json_last_error() === JSON_ERROR_NONE && isset($jsonResponse['summary'])) {
         // It's valid JSON and contains the expected keys
-        echo json_encode(['status' => 'success', 'simplified_data' => $jsonResponse]);
+        // Store in cache
+        $updateStmt = $pdo->prepare("
+            UPDATE medical_records 
+            SET simplified_data = ?, simplified_language = ?, simplified_at = NOW() 
+            WHERE id = ?
+        ");
+        $updateStmt->execute([json_encode($jsonResponse), $language, $record_id]);
+        
+        echo json_encode(['status' => 'success', 'simplified_data' => $jsonResponse, 'cached' => false]);
     } else {
         // It's not valid JSON, return it as plain text in a structured way
         $fallbackData = [
@@ -167,5 +227,26 @@ try {
     echo json_encode(['status' => 'error', 'message' => 'Database error: ' . $e->getMessage()]);
 } catch (\Exception $e) {
     // Catch exceptions from the Gemini client or other errors
-    echo json_encode(['status' => 'error', 'message' => 'An error occurred: ' . $e->getMessage()]);
+    $errorMessage = $e->getMessage();
+    
+    // Check if it's a quota/rate limit error
+    if (stripos($errorMessage, 'quota') !== false || 
+        stripos($errorMessage, 'rate limit') !== false ||
+        stripos($errorMessage, 'RESOURCE_EXHAUSTED') !== false ||
+        stripos($errorMessage, '429') !== false) {
+        
+        echo json_encode([
+            'status' => 'error', 
+            'message' => 'AI service quota exceeded. This report will be simplified when the quota resets. Please try again in a few minutes, or use a cached version if available.',
+            'error_type' => 'quota_exceeded',
+            'retry_after' => 60, // Suggest retry after 60 seconds
+            'suggestion' => 'The system caches simplified reports. If you\'ve viewed this before, the cached version will be used automatically.'
+        ]);
+    } else {
+        echo json_encode([
+            'status' => 'error', 
+            'message' => 'An error occurred while processing your request: ' . $errorMessage,
+            'error_type' => 'processing_error'
+        ]);
+    }
 }
