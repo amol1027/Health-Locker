@@ -509,10 +509,22 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     };
 
+    // Track ongoing requests to prevent duplicates
+    const ongoingRequests = new Set();
+
     // New function to handle language selection and then simplify
     window.selectLanguageAndSimplify = function(recordId, language, event) {
         event.preventDefault(); // Prevent default link behavior
         event.stopPropagation(); // Stop propagation to prevent immediate closing by document click
+
+        // Disable the button to prevent multiple clicks
+        const simplifyBtn = document.getElementById(`simplifyBtn_${recordId}`);
+        if (simplifyBtn) {
+            simplifyBtn.disabled = true;
+            simplifyBtn.classList.add('opacity-50', 'cursor-not-allowed');
+            simplifyBtn.dataset.originalText = simplifyBtn.innerHTML;
+            simplifyBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i> Processing...';
+        }
 
         // Close the dropdown immediately
         const dropdown = document.getElementById(`languageDropdown_${recordId}`);
@@ -521,11 +533,22 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         
         // Then call the main simplification function
-        getSimplifiedReport(recordId, language);
+        getSimplifiedReport(recordId, language, simplifyBtn);
     };
 
     // Gemini Modal logic
-    window.getSimplifiedReport = async function(recordId, languageFromDropdown) {
+    window.getSimplifiedReport = async function(recordId, languageFromDropdown, simplifyBtn) {
+        // Create a unique key for this request
+        const requestKey = `${recordId}_${languageFromDropdown || 'default'}`;
+        
+        // Check if this request is already in progress
+        if (ongoingRequests.has(requestKey)) {
+            console.log('Request already in progress, ignoring duplicate');
+            return;
+        }
+        
+        // Mark this request as ongoing
+        ongoingRequests.add(requestKey);
         const geminiModal = document.getElementById('geminiModal');
         const modalContent = document.getElementById('geminiModalContent');
         geminiModal.classList.remove('hidden');
@@ -583,7 +606,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
                 // Populate Key Points
                 const keyPointsList = document.getElementById('keyPointsList');
-                keyPointsList.innerHTML = ''; // Clear previous points
+                keyPointsList.innerHTML = '';
                 if (key_points && key_points.length > 0) {
                     key_points.forEach(point => {
                         const li = document.createElement('li');
@@ -598,7 +621,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
                 // Populate Terms Explained
                 const termsList = document.getElementById('termsList');
-                termsList.innerHTML = ''; // Clear previous terms
+                termsList.innerHTML = '';
                 if (terms_explained && Object.keys(terms_explained).length > 0) {
                     for (const term in terms_explained) {
                         const div = document.createElement('div');
@@ -612,8 +635,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 } else {
                     document.getElementById('termsExplainedSection').classList.add('hidden');
                 }
-                
-                // Show content with animation
                 loadingState.classList.add('hidden');
                 contentState.classList.remove('hidden');
                 anime({
@@ -623,27 +644,53 @@ document.addEventListener('DOMContentLoaded', function() {
                     delay: anime.stagger(100),
                     easing: 'easeOutCubic'
                 });
-
             } else {
-                // Handle error from API
                 errorMessage.textContent = data.message || 'An unknown error occurred.';
                 loadingState.classList.add('hidden');
                 errorState.classList.remove('hidden');
             }
         } catch (error) {
-            // Handle network/fetch error
             errorMessage.textContent = 'A network or server error occurred. Please try again later.';
             loadingState.classList.add('hidden');
             errorState.classList.remove('hidden');
+        } finally {
+            ongoingRequests.delete(requestKey);
+            // Re-enable the button after request completes
+            if (simplifyBtn) {
+                simplifyBtn.disabled = false;
+                simplifyBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+                if (simplifyBtn.dataset.originalText) {
+                    simplifyBtn.innerHTML = simplifyBtn.dataset.originalText;
+                }
+            }
         }
     };
 
-    // Override close function to add animation
+    // Override close function to add animation and reset modal/button state
     const originalCloseAllModals = window.closeAllModals;
     window.closeAllModals = () => {
         const geminiModal = document.getElementById('geminiModal');
         const modalContent = document.getElementById('geminiModalContent');
-        const deleteConfirmModal = document.getElementById('deleteConfirmModal'); // Get delete modal
+        const deleteConfirmModal = document.getElementById('deleteConfirmModal');
+
+        // Reset modal content state
+        document.getElementById('summaryContent').textContent = '';
+        document.getElementById('keyPointsList').innerHTML = '';
+        document.getElementById('termsList').innerHTML = '';
+        document.getElementById('keyPointsSection').classList.add('hidden');
+        document.getElementById('termsExplainedSection').classList.add('hidden');
+        document.getElementById('loadingState').classList.remove('hidden');
+        document.getElementById('errorState').classList.add('hidden');
+        document.getElementById('contentState').classList.add('hidden');
+
+        // Re-enable all simplify buttons
+        document.querySelectorAll('[id^="simplifyBtn_"]').forEach(btn => {
+            btn.disabled = false;
+            btn.classList.remove('opacity-50', 'cursor-not-allowed');
+            if (btn.dataset.originalText) {
+                btn.innerHTML = btn.dataset.originalText;
+            }
+        });
 
         // Close Gemini modal with animation
         if (!geminiModal.classList.contains('hidden')) {
@@ -668,7 +715,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
         // Close other modals directly
         document.querySelectorAll('.fixed.inset-0').forEach(modal => {
-            if (modal !== geminiModal) { // Don't hide geminiModal twice
+            if (modal !== geminiModal) {
                 modal.classList.add('hidden');
             }
         });
